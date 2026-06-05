@@ -85,6 +85,33 @@ body {
   color: var(--foreground);
 }
 
+/* Claymorphism — soft 3D surfaces for cards and panels. */
+.clay-surface {
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow:
+    6px 6px 14px rgba(0, 0, 0, 0.06),
+    -4px -4px 12px rgba(255, 255, 255, 0.7),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.dark .clay-surface {
+  box-shadow:
+    6px 6px 16px rgba(0, 0, 0, 0.35),
+    -2px -2px 8px rgba(255, 255, 255, 0.04),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.clay-inset {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  box-shadow: inset 3px 3px 8px rgba(0, 0, 0, 0.06);
+}
+
+.dark .clay-inset {
+  box-shadow: inset 3px 3px 10px rgba(0, 0, 0, 0.3);
+}
+
 /* Markdown preview ("prose") styling, theme-aware. */
 .prose-note {
   line-height: 1.7;

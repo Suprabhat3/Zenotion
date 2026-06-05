@@ -59,6 +59,43 @@ export const aiRequestSchema = z.object({
 
 export type AiAction = (typeof AI_ACTIONS)[number];
 
+export const noteIdSchema = z.object({
+  noteId: z.string().cuid(),
+});
+
+export const renameNoteSchema = z.object({
+  noteId: z.string().cuid(),
+  title: z.string().trim().min(1, "Title is required.").max(200),
+});
+
+export const moveNoteSchema = z.object({
+  noteId: z.string().cuid(),
+  folderId: z.string().cuid().nullable(),
+});
+
+export const toggleNotePublicSchema = z.object({
+  noteId: z.string().cuid(),
+  isPublic: z.boolean(),
+});
+
+export const assignTagsSchema = z.object({
+  noteId: z.string().cuid(),
+  tagIds: z.array(z.string().cuid()),
+});
+
+export const folderIdSchema = z.object({
+  folderId: z.string().cuid(),
+});
+
+export const tagIdSchema = z.object({
+  tagId: z.string().cuid(),
+});
+
+export const renameFolderSchema = z.object({
+  folderId: z.string().cuid(),
+  name: z.string().trim().min(1, "Name is required.").max(100),
+});
+
 /**
  * Validate `data` against `schema`, throwing a 400 `ApiError` with field
  * details on failure. Use inside route handlers and server actions.
