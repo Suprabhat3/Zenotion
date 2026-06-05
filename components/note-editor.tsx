@@ -7,6 +7,7 @@ import {
   Copy,
   Globe,
   Loader2,
+  MoreHorizontal,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -20,9 +21,15 @@ import {
   toggleNotePublic,
 } from "@/app/(app)/notes/actions";
 import { AiCommandPalette } from "@/components/ai-command-palette";
+import { CopyButton } from "@/components/copy-button";
+import {
+  EditorModeToggle,
+  type EditorMode,
+} from "@/components/editor-mode-toggle";
+import { MarkdownCodeEditor } from "@/components/markdown-code-editor";
 import { MarkdownPreview } from "@/components/markdown-preview";
+import { RichTextEditor } from "@/components/rich-text-editor";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -32,6 +39,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+const EDITOR_MODE_KEY = "zenotion-editor-mode";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -46,18 +55,37 @@ type NotePatch = {
   content?: string;
 };
 
+function getStoredEditorMode(): EditorMode {
+  if (typeof window === "undefined") return "rich";
+  const stored = localStorage.getItem(EDITOR_MODE_KEY);
+  return stored === "markdown" ? "markdown" : "rich";
+}
+
 export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
   const router = useRouter();
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
+  const [editorMode, setEditorMode] = useState<EditorMode>(() => {
+    if (typeof window === "undefined") return "rich";
+    return getStoredEditorMode();
+  });
   const [isPublic, setIsPublic] = useState(note.isPublic);
   const [shareSlug, setShareSlug] = useState(note.shareSlug);
   const [selectedTagIds, setSelectedTagIds] = useState(
     note.tags.map((t) => t.tagId),
   );
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [richKey, setRichKey] = useState(0);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSaved = useRef({ title: note.title, content: note.content });
+
+  function handleModeChange(mode: EditorMode) {
+    setEditorMode(mode);
+    localStorage.setItem(EDITOR_MODE_KEY, mode);
+    if (mode === "rich") {
+      setRichKey((k) => k + 1);
+    }
+  }
 
   const saveNote = useCallback(
     async (patch: NotePatch) => {
@@ -172,6 +200,9 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
     } else {
       setContent(result);
     }
+    if (editorMode === "rich") {
+      setRichKey((k) => k + 1);
+    }
   }
 
   const statusLabel: Record<SaveStatus, string> = {
@@ -182,18 +213,25 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3">
+    <div className="flex min-h-0 flex-1 flex-col bg-background">
+      {/* Title bar */}
+      <div className="border-b px-4 py-4 sm:px-6">
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="min-w-0 flex-1 bg-transparent text-xl font-semibold outline-none placeholder:text-muted-foreground"
+          className="w-full bg-transparent text-2xl font-semibold tracking-tight outline-none placeholder:text-muted-foreground sm:text-3xl"
           placeholder="Untitled"
         />
-        <div className="flex items-center gap-2">
+      </div>
+
+      {/* Toolbar */}
+      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b bg-background/95 px-4 py-2.5 backdrop-blur sm:px-6">
+        <EditorModeToggle mode={editorMode} onChange={handleModeChange} />
+
+        <div className="flex flex-wrap items-center gap-1.5">
           {saveStatus !== "idle" && (
             <span
-              className={`flex items-center gap-1 text-xs ${
+              className={`mr-1 flex items-center gap-1 text-xs ${
                 saveStatus === "error"
                   ? "text-destructive"
                   : "text-muted-foreground"
@@ -207,17 +245,19 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
             </span>
           )}
 
+          <CopyButton text={content} label="Copy" />
+
           <AiCommandPalette content={content} onApply={handleAiApply} />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                Folder
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="hidden sm:inline">Organize</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>Move to folder</DropdownMenuLabel>
-              <DropdownMenuSeparator />
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel>Folder</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => handleMove(null)}>
                 No folder
               </DropdownMenuItem>
@@ -226,18 +266,8 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
                   {f.name}
                 </DropdownMenuItem>
               ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                Tags
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>Assign tags</DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuLabel>Tags</DropdownMenuLabel>
               {tags.length === 0 ? (
                 <DropdownMenuItem disabled>No tags yet</DropdownMenuItem>
               ) : (
@@ -274,7 +304,7 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
               onClick={handleCopyShareLink}
             >
               <Copy className="h-4 w-4" />
-              Copy link
+              <span className="hidden sm:inline">Link</span>
             </Button>
           )}
 
@@ -289,27 +319,42 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
         </div>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-2">
-        <div className="flex flex-col border-b lg:border-b-0 lg:border-r">
-          <div className="border-b px-4 py-2 text-xs font-medium text-muted-foreground">
-            Editor
-          </div>
-          <Textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="min-h-[50vh] flex-1 resize-none rounded-none border-0 font-mono text-sm shadow-none focus-visible:ring-0 lg:min-h-0"
-            placeholder="Write markdown here…"
-          />
-        </div>
-        <div className="flex flex-col overflow-hidden">
-          <div className="border-b px-4 py-2 text-xs font-medium text-muted-foreground">
-            Preview
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 clay-inset m-4 rounded-lg">
-            <MarkdownPreview content={content} />
+      {/* Editor body */}
+      {editorMode === "rich" ? (
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-3xl px-4 py-2 sm:px-8">
+            <RichTextEditor
+              key={`rich-${note.id}-${richKey}`}
+              content={content}
+              onChange={setContent}
+            />
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="editor-split grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-2">
+          <div className="editor-pane flex min-h-0 flex-col border-b lg:border-b-0 lg:border-r">
+            <div className="editor-pane-header flex items-center justify-between px-4 py-2.5">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Markdown
+              </span>
+            </div>
+            <div className="min-h-0 flex-1 overflow-hidden bg-background">
+              <MarkdownCodeEditor value={content} onChange={setContent} />
+            </div>
+          </div>
+          <div className="editor-pane flex min-h-0 flex-col">
+            <div className="editor-pane-header flex items-center justify-between px-4 py-2.5">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Preview
+              </span>
+              <CopyButton text={content} label="Copy all" />
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto bg-muted/20 px-6 py-6 lg:px-10">
+              <MarkdownPreview content={content} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

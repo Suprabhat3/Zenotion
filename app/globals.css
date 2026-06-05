@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "highlight.js/styles/github-dark.min.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -132,13 +133,6 @@ body {
   color: var(--muted-foreground);
   margin: 0.75rem 0;
 }
-.prose-note code {
-  background: var(--muted);
-  padding: 0.15rem 0.35rem;
-  border-radius: 0.25rem;
-  font-family: var(--font-mono), monospace;
-  font-size: 0.875em;
-}
 .prose-note pre {
   background: var(--muted);
   padding: 1rem;
@@ -147,11 +141,176 @@ body {
   margin: 0.75rem 0;
 }
 .prose-note pre code { background: transparent; padding: 0; }
-.prose-note table { border-collapse: collapse; margin: 0.75rem 0; width: 100%; }
-.prose-note th, .prose-note td {
-  border: 1px solid var(--border);
-  padding: 0.4rem 0.6rem;
-  text-align: left;
-}
 .prose-note hr { border: 0; border-top: 1px solid var(--border); margin: 1.5rem 0; }
-.prose-note input[type="checkbox"] { margin-right: 0.5rem; }
+.prose-note input[type="checkbox"] { margin-right: 0.5rem; accent-color: var(--foreground); }
+.prose-note del { color: var(--muted-foreground); text-decoration: line-through; }
+
+/* Inline code — no copy button, clean spacing */
+.prose-note .markdown-inline-code,
+.prose-note code:not(.hljs) {
+  background: var(--muted);
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.3rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.875em;
+  border: 1px solid var(--border);
+}
+
+/* GFM tables */
+.prose-note .markdown-table-wrap {
+  margin: 1rem 0;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.dark .prose-note .markdown-table-wrap {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.prose-note .markdown-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.prose-note .markdown-table-head {
+  background: color-mix(in srgb, var(--muted) 80%, var(--card));
+}
+.prose-note .markdown-table-th {
+  padding: 0.65rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.prose-note .markdown-table-td {
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+  vertical-align: top;
+}
+.prose-note .markdown-table-body .markdown-table-row:last-child .markdown-table-td {
+  border-bottom: none;
+}
+.prose-note .markdown-table-body .markdown-table-row:hover {
+  background: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+/* Task lists */
+.prose-note ul.contains-task-list {
+  list-style: none;
+  padding-left: 0;
+}
+.prose-note li.task-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  list-style: none;
+}
+
+/* Images */
+.prose-note .markdown-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin: 0.75rem 0;
+}
+
+/* Links */
+.prose-note .markdown-link {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.dark .prose-note .markdown-link {
+  color: #60a5fa;
+}
+
+/* Code blocks — copy on hover only */
+.prose-note .code-block-group .cm-copy,
+.prose-note .code-block-group button {
+  pointer-events: auto;
+}
+
+/* TipTap rich editor — Notion-like document feel */
+.rich-editor-content {
+  line-height: 1.7;
+}
+.rich-editor-content p { margin: 0.5rem 0; }
+.rich-editor-content h1 { font-size: 1.875rem; font-weight: 700; margin: 1.25rem 0 0.5rem; }
+.rich-editor-content h2 { font-size: 1.5rem; font-weight: 700; margin: 1rem 0 0.5rem; }
+.rich-editor-content h3 { font-size: 1.25rem; font-weight: 600; margin: 0.75rem 0 0.35rem; }
+.rich-editor-content ul { list-style: disc; padding-left: 1.5rem; margin: 0.5rem 0; }
+.rich-editor-content ol { list-style: decimal; padding-left: 1.5rem; margin: 0.5rem 0; }
+.rich-editor-content blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 1rem;
+  color: var(--muted-foreground);
+  margin: 0.75rem 0;
+}
+.rich-editor-content code {
+  background: var(--muted);
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.875em;
+}
+.rich-editor-content pre {
+  background: #0d1117;
+  color: #e6edf3;
+  padding: 1rem;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  margin: 0.75rem 0;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.875rem;
+}
+.rich-editor-content pre code { background: transparent; padding: 0; color: inherit; }
+.rich-editor-content a { color: #2563eb; text-decoration: underline; }
+.dark .rich-editor-content a { color: #60a5fa; }
+.rich-editor-content ul[data-type="taskList"] { list-style: none; padding-left: 0; }
+.rich-editor-content li[data-type="taskItem"] { display: flex; gap: 0.5rem; align-items: flex-start; }
+.rich-editor-content li[data-type="taskItem"] > label { margin-top: 0.2rem; }
+.rich-editor-content p.is-editor-empty:first-child::before {
+  color: var(--muted-foreground);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Editor split panes — full-height, no floating cards */
+.editor-split {
+  height: 100%;
+}
+.editor-pane-header {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 40%, var(--background));
+}
+
+/* CodeMirror — force theme sync with app (overrides @uiw light defaults) */
+.markdown-cm-editor {
+  height: 100%;
+}
+.markdown-cm-editor .cm-editor {
+  height: 100%;
+  background-color: var(--background) !important;
+}
+.markdown-cm-editor .cm-scroller {
+  background-color: var(--background);
+}
+.markdown-cm-editor .cm-content {
+  color: var(--foreground);
+}
+.markdown-cm-editor .cm-gutters {
+  background-color: var(--muted) !important;
+  color: var(--muted-foreground) !important;
+  border-right: 1px solid var(--border) !important;
+}
+.markdown-cm-editor .cm-activeLineGutter {
+  background-color: var(--accent) !important;
+}

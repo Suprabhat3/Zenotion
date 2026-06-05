@@ -29,7 +29,9 @@ export default async function AppLayout({
       </header>
       <div className="flex min-h-0 flex-1">
         <AppSidebar sidebar={sidebar} />
-        <main className="min-w-0 flex-1 overflow-auto">{children}</main>
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          {children}
+        </main>
       </div>
     </div>
   );

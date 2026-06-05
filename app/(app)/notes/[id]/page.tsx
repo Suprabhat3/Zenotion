@@ -30,10 +30,12 @@ export default async function NotePage({ params }: PageProps) {
   if (!note) notFound();
 
   return (
-    <NoteEditor
-      note={note}
-      folders={sidebar.folders.map((f) => ({ id: f.id, name: f.name }))}
-      tags={sidebar.tags}
-    />
+    <div className="flex min-h-0 flex-1 flex-col">
+      <NoteEditor
+        note={note}
+        folders={sidebar.folders.map((f) => ({ id: f.id, name: f.name }))}
+        tags={sidebar.tags}
+      />
+    </div>
   );
 }

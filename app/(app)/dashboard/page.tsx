@@ -35,7 +35,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       : undefined;
 
   return (
-    <div className="p-6">
+    <div className="flex-1 overflow-y-auto p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Your notes</h1>
