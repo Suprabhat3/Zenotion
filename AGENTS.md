@@ -94,6 +94,16 @@ Expected error behavior:
 - Do not expose OpenAI requests directly from the client; route AI calls through a server endpoint.
 - Keep AI actions bounded to note assistance for v1 rather than building a long-running autonomous agent.
 
+## UI and styling
+- We use claymorphism theme so it can give little bit lively 3D feels and looks good.
+- Use Tailwind CSS for styling. 
+- Use Shadcn UI components for faster development and a consistent design.
+- Ensure the UI is responsive and works well on both desktop and mobile devices.
+- We go with the simple dark and light theme just like we have in the notion.
+- For this theme switching you can use the next theme.
+- Make sure we have the consistent UI all over the place.
+- For icons you can use the lucide-react icons.
+
 ## Testing And Verification
 
 Before handing off implementation work, run the available checks:
