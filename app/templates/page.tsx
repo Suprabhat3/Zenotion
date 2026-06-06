@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { SiteHeader } from "@/components/site-header";
+import { getCurrentUser } from "@/lib/session";
 
 /** ISR — templates gallery revalidates every hour. */
 export const revalidate = 3600;
@@ -51,7 +52,8 @@ const TEMPLATES = [
   },
 ] as const;
 
-export default function TemplatesPage() {
+export default async function TemplatesPage() {
+  const user = await getCurrentUser();
   const generatedAt = new Intl.DateTimeFormat("en", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -59,17 +61,7 @@ export default function TemplatesPage() {
 
   return (
     <div className="min-h-svh">
-      <header className="flex items-center justify-between px-6 py-4">
-        <Link href="/" className="text-lg font-semibold">
-          Zenotion
-        </Link>
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          <Button asChild>
-            <Link href="/signup">Get started</Link>
-          </Button>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="mx-auto max-w-5xl px-6 py-12">
         <div className="mb-8">
@@ -97,7 +89,9 @@ export default function TemplatesPage() {
                 {template.preview.slice(0, 120)}…
               </pre>
               <Button variant="outline" size="sm" asChild>
-                <Link href="/signup">Use after signup</Link>
+                <Link href={user ? "/dashboard" : "/signup"}>
+                  {user ? "Open in dashboard" : "Use after signup"}
+                </Link>
               </Button>
             </li>
           ))}

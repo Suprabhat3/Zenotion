@@ -24,7 +24,11 @@ export default async function AppLayout({
         </Link>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <UserMenu name={user.name} email={user.email} />
+          <UserMenu
+            name={user.name}
+            email={user.email}
+            image={user.image}
+          />
         </div>
       </header>
       <div className="flex min-h-0 flex-1">

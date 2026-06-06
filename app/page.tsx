@@ -7,23 +7,15 @@ import {
   Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { SiteHeader } from "@/components/site-header";
+import { getCurrentUser } from "@/lib/session";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const user = await getCurrentUser();
+
   return (
     <div className="min-h-svh">
-      <header className="flex items-center justify-between px-6 py-4">
-        <span className="text-lg font-semibold">Zenotion</span>
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          <Button variant="ghost" asChild>
-            <Link href="/login">Sign in</Link>
-          </Button>
-          <Button asChild>
-            <Link href="/signup">Get started</Link>
-          </Button>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main>
         <section className="mx-auto max-w-4xl px-6 py-20 text-center">
@@ -36,9 +28,15 @@ export default function HomePage() {
             supercharge drafts with AI.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
-            <Button size="lg" asChild>
-              <Link href="/signup">Start writing free</Link>
-            </Button>
+            {user ? (
+              <Button size="lg" asChild>
+                <Link href="/dashboard">Go to dashboard</Link>
+              </Button>
+            ) : (
+              <Button size="lg" asChild>
+                <Link href="/signup">Start writing free</Link>
+              </Button>
+            )}
             <Button size="lg" variant="outline" asChild>
               <Link href="/templates">Browse templates</Link>
             </Button>

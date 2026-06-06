@@ -1,27 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { SiteHeader } from "@/components/site-header";
+import { getCurrentUser } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "About",
   description: "Learn about Zenotion — a Notion-style AI notes app.",
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const user = await getCurrentUser();
+
   return (
     <div className="min-h-svh">
-      <header className="flex items-center justify-between px-6 py-4">
-        <Link href="/" className="text-lg font-semibold">
-          Zenotion
-        </Link>
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          <Button variant="outline" asChild>
-            <Link href="/login">Sign in</Link>
-          </Button>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="mx-auto max-w-2xl px-6 py-16">
         <h1 className="mb-6 text-3xl font-bold">About Zenotion</h1>
@@ -44,9 +37,15 @@ export default function AboutPage() {
           </p>
         </div>
         <div className="mt-10 flex gap-3">
-          <Button asChild>
-            <Link href="/signup">Create an account</Link>
-          </Button>
+          {user ? (
+            <Button asChild>
+              <Link href="/dashboard">Open dashboard</Link>
+            </Button>
+          ) : (
+            <Button asChild>
+              <Link href="/signup">Create an account</Link>
+            </Button>
+          )}
           <Button variant="outline" asChild>
             <Link href="/templates">View templates</Link>
           </Button>
