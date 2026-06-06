@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { FileText } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
+import { TemplateUseButton } from "@/components/template-use-button";
 import { getCurrentUser } from "@/lib/session";
 
 /** ISR — templates gallery revalidates every hour. */
@@ -54,6 +53,7 @@ const TEMPLATES = [
 
 export default async function TemplatesPage() {
   const user = await getCurrentUser();
+  const isLoggedIn = user !== null;
   const generatedAt = new Intl.DateTimeFormat("en", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -88,11 +88,11 @@ export default async function TemplatesPage() {
               <pre className="mb-4 max-h-24 overflow-hidden rounded-md p-2 text-xs text-muted-foreground clay-inset">
                 {template.preview.slice(0, 120)}…
               </pre>
-              <Button variant="outline" size="sm" asChild>
-                <Link href={user ? "/dashboard" : "/signup"}>
-                  {user ? "Open in dashboard" : "Use after signup"}
-                </Link>
-              </Button>
+              <TemplateUseButton
+                templateTitle={template.title}
+                templateContent={template.preview}
+                isLoggedIn={isLoggedIn}
+              />
             </li>
           ))}
         </ul>

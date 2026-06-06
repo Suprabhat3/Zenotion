@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
 import { getPublicNoteBySlug } from "@/lib/notes";
+import { getCurrentUser } from "@/lib/session";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { ShareNoteActions } from "@/components/share-note-actions";
+import { CopySharedNoteButton } from "@/components/copy-shared-note-button";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -22,7 +24,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function SharePage({ params }: PageProps) {
   const { slug } = await params;
-  const note = await getPublicNoteBySlug(slug);
+  const [note, currentUser] = await Promise.all([
+    getPublicNoteBySlug(slug),
+    getCurrentUser(),
+  ]);
 
   if (!note) notFound();
 
@@ -50,11 +55,17 @@ export default async function SharePage({ params }: PageProps) {
               By {note.user.name} · Updated {formattedDate}
             </p>
           </div>
-          <ShareNoteActions
-            slug={slug}
-            title={note.title}
-            content={note.content}
-          />
+          <div className="flex shrink-0 items-center gap-1.5">
+            <CopySharedNoteButton
+              shareSlug={slug}
+              isLoggedIn={currentUser !== null}
+            />
+            <ShareNoteActions
+              slug={slug}
+              title={note.title}
+              content={note.content}
+            />
+          </div>
         </div>
         <div className="rounded-xl p-6 sm:p-8 clay-surface">
           <MarkdownPreview content={note.content} showCopyAll />

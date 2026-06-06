@@ -4,8 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Check,
-  Copy,
-  Globe,
   Loader2,
   MoreHorizontal,
   Trash2,
@@ -18,8 +16,8 @@ import {
   assignNoteTags,
   deleteNote,
   moveNote,
-  toggleNotePublic,
 } from "@/app/(app)/notes/actions";
+import { ShareDialog } from "@/components/share-dialog";
 import { AiCommandPalette } from "@/components/ai-command-palette";
 import { CopyButton } from "@/components/copy-button";
 import {
@@ -69,8 +67,6 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
     if (typeof window === "undefined") return "rich";
     return getStoredEditorMode();
   });
-  const [isPublic, setIsPublic] = useState(note.isPublic);
-  const [shareSlug, setShareSlug] = useState(note.shareSlug);
   const [selectedTagIds, setSelectedTagIds] = useState(
     note.tags.map((t) => t.tagId),
   );
@@ -130,29 +126,6 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
   }, [title, content, saveNote]);
-
-  async function handleTogglePublic() {
-    const next = !isPublic;
-    const formData = new FormData();
-    formData.set("noteId", note.id);
-    formData.set("isPublic", String(next));
-    try {
-      const updated = await toggleNotePublic(formData);
-      setIsPublic(updated.isPublic);
-      setShareSlug(updated.shareSlug);
-      toast.success(next ? "Note is now public." : "Note is now private.");
-      router.refresh();
-    } catch {
-      toast.error("Could not update sharing.");
-    }
-  }
-
-  async function handleCopyShareLink() {
-    if (!shareSlug) return;
-    const url = `${window.location.origin}/share/${shareSlug}`;
-    await navigator.clipboard.writeText(url);
-    toast.success("Share link copied.");
-  }
 
   async function handleMove(folderId: string | null) {
     const formData = new FormData();
@@ -286,27 +259,11 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button
-            variant={isPublic ? "default" : "outline"}
-            size="sm"
-            className="gap-1.5"
-            onClick={handleTogglePublic}
-          >
-            <Globe className="h-4 w-4" />
-            {isPublic ? "Public" : "Share"}
-          </Button>
-
-          {isPublic && shareSlug && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5"
-              onClick={handleCopyShareLink}
-            >
-              <Copy className="h-4 w-4" />
-              <span className="hidden sm:inline">Link</span>
-            </Button>
-          )}
+          <ShareDialog
+            noteId={note.id}
+            initialIsPublic={note.isPublic}
+            initialShareSlug={note.shareSlug}
+          />
 
           <Button
             variant="ghost"

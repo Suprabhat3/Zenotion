@@ -270,6 +270,35 @@ export async function deleteTag(formData: FormData) {
   revalidateApp();
 }
 
+export async function copySharedNote(formData: FormData): Promise<{ id: string }> {
+  const user = await requireUser();
+
+  const shareSlug = formData.get("shareSlug");
+  if (!shareSlug || typeof shareSlug !== "string") {
+    throw new Error("Invalid share link.");
+  }
+
+  const source = await prisma.note.findFirst({
+    where: { shareSlug, isPublic: true },
+    select: { title: true, content: true },
+  });
+  if (!source) {
+    throw new Error("Shared note not found or is no longer public.");
+  }
+
+  const copy = await prisma.note.create({
+    data: {
+      title: `${source.title} (copy)`,
+      content: source.content,
+      userId: user.id,
+    },
+    select: { id: true },
+  });
+
+  revalidateApp();
+  return copy;
+}
+
 export async function assignNoteTags(formData: FormData) {
   const user = await requireUser();
   const input = parseOrThrow(assignTagsSchema, {
