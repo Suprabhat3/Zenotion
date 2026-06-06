@@ -6,8 +6,8 @@ It demonstrates core App Router concepts: file-based routing, nested layouts, re
 
 ## Live Demo
 
-- App URL: `ADD_DEPLOYED_URL_HERE`
-- Demo account (optional): `ADD_DEMO_ACCOUNT_DETAILS_HERE`
+- App URL: https://zenotion-one.vercel.app/
+- Demo account : Email = test@zenotion.com, Password = Test@123
 
 ## Class Requirement Coverage
 
