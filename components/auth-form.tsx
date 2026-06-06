@@ -18,7 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
+import { BrandLogo } from "@/components/brand-logo";
 type Mode = "login" | "signup";
 
 export function AuthForm({ mode }: { mode: Mode }) {
@@ -67,9 +67,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
   return (
     <Card className="w-full max-w-md rounded-xl">
       <CardHeader className="space-y-3 pb-2 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl clay-brand-mark text-base">
-          Z
-        </div>
+        <BrandLogo className="flex justify-center"/>
         <div className="space-y-1.5">
           <CardTitle className="text-2xl">
             {isSignup ? "Create your account" : "Welcome back"}

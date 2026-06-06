@@ -85,7 +85,7 @@ export function ShareDialog({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Globe className="h-5 w-5" />
@@ -138,7 +138,7 @@ export function ShareDialog({
               <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Share link
               </Label>
-              <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2.5">
+              <div className="flex min-w-0 items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2.5">
                 <Link2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
                   {shareUrl}
@@ -157,7 +157,7 @@ export function ShareDialog({
                   )}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="break-words text-xs text-muted-foreground">
                 Viewers can read the note and make their own copy — they cannot
                 edit the original.
               </p>
