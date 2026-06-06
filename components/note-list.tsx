@@ -24,7 +24,7 @@ function formatDate(date: Date): string {
 export function NoteList({ notes, emptyMessage }: NoteListProps) {
   if (notes.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center clay-surface">
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/70 py-16 text-center clay-surface">
         <FileText className="mb-3 h-10 w-10 text-muted-foreground" />
         <p className="text-muted-foreground">
           {emptyMessage ?? "No notes yet. Create your first note to get started."}
@@ -40,7 +40,7 @@ export function NoteList({ notes, emptyMessage }: NoteListProps) {
           <Link
             href={`/notes/${note.id}`}
             className={cn(
-              "block rounded-lg p-4 transition-colors hover:bg-accent/50 clay-surface",
+              "block rounded-xl p-4 transition-all hover:-translate-y-0.5 clay-surface",
             )}
           >
             <div className="mb-2 flex items-start justify-between gap-2">

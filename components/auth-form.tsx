@@ -6,6 +6,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { signIn, signUp } from "@/lib/auth-client";
+import { GoogleIcon } from "@/components/icons/google-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,24 +64,55 @@ export function AuthForm({ mode }: { mode: Mode }) {
   }
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle>{isSignup ? "Create your account" : "Welcome back"}</CardTitle>
-        <CardDescription>
-          {isSignup
-            ? "Start writing AI-assisted notes in seconds."
-            : "Sign in to your Zenotion workspace."}
-        </CardDescription>
+    <Card className="w-full max-w-md rounded-xl">
+      <CardHeader className="space-y-3 pb-2 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl clay-brand-mark text-base">
+          Z
+        </div>
+        <div className="space-y-1.5">
+          <CardTitle className="text-2xl">
+            {isSignup ? "Create your account" : "Welcome back"}
+          </CardTitle>
+          <CardDescription className="text-base">
+            {isSignup
+              ? "Start writing AI-assisted notes in seconds."
+              : "Sign in to your Zenotion workspace."}
+          </CardDescription>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+
+      <CardContent className="space-y-5">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 w-full bg-card text-base font-medium"
+          onClick={handleGoogle}
+          disabled={googleLoading || loading}
+        >
+          {googleLoading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <GoogleIcon />
+          )}
+          Continue with Google
+        </Button>
+
+        <div className="clay-divider">or</div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           {isSignup && (
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
-              <Input id="name" name="name" placeholder="Ada Lovelace" required />
+              <Input
+                id="name"
+                name="name"
+                placeholder="Ada Lovelace"
+                className="h-11"
+                required
+              />
             </div>
           )}
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
@@ -88,10 +120,11 @@ export function AuthForm({ mode }: { mode: Mode }) {
               type="email"
               placeholder="you@example.com"
               autoComplete="email"
+              className="h-11"
               required
             />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
@@ -100,44 +133,39 @@ export function AuthForm({ mode }: { mode: Mode }) {
               placeholder="••••••••"
               autoComplete={isSignup ? "new-password" : "current-password"}
               minLength={8}
+              className="h-11"
               required
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button
+            type="submit"
+            className="h-11 w-full text-base"
+            disabled={loading || googleLoading}
+          >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {isSignup ? "Create account" : "Sign in"}
           </Button>
         </form>
-
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="h-px flex-1 bg-border" />
-          OR
-          <span className="h-px flex-1 bg-border" />
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={handleGoogle}
-          disabled={googleLoading}
-        >
-          {googleLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-          Continue with Google
-        </Button>
       </CardContent>
-      <CardFooter className="justify-center text-sm text-muted-foreground">
+
+      <CardFooter className="justify-center border-t border-border/60 pt-6 text-sm text-muted-foreground">
         {isSignup ? (
           <span>
             Already have an account?{" "}
-            <Link href="/login" className="font-medium text-foreground underline">
+            <Link
+              href="/login"
+              className="font-medium text-foreground underline-offset-4 hover:underline"
+            >
               Sign in
             </Link>
           </span>
         ) : (
           <span>
             New here?{" "}
-            <Link href="/signup" className="font-medium text-foreground underline">
+            <Link
+              href="/signup"
+              className="font-medium text-foreground underline-offset-4 hover:underline"
+            >
               Create an account
             </Link>
           </span>

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AI_PROVIDERS } from "@/lib/ai-providers";
 import { ApiError } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
@@ -53,8 +54,10 @@ export const AI_ACTIONS = [
 export const aiRequestSchema = z.object({
   action: z.enum(AI_ACTIONS),
   content: z.string().trim().min(1, "There's no text to work with.").max(50_000),
-  // Optional free-form instruction (e.g. target tone or language).
   instruction: z.string().trim().max(200).optional(),
+  provider: z.enum(AI_PROVIDERS),
+  model: z.string().trim().min(1, "Model is required.").max(120),
+  apiKey: z.string().trim().min(8, "API key is required.").max(500),
 });
 
 export type AiAction = (typeof AI_ACTIONS)[number];

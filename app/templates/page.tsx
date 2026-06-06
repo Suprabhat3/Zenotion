@@ -60,7 +60,7 @@ export default async function TemplatesPage() {
   }).format(new Date());
 
   return (
-    <div className="min-h-svh">
+    <div className="min-h-svh clay-page-bg">
       <SiteHeader />
 
       <main className="mx-auto max-w-5xl px-6 py-12">
@@ -78,14 +78,14 @@ export default async function TemplatesPage() {
           {TEMPLATES.map((template) => (
             <li
               key={template.id}
-              className="flex flex-col rounded-lg p-5 clay-surface"
+              className="flex flex-col rounded-xl p-5 clay-surface"
             >
               <FileText className="mb-3 h-8 w-8 text-muted-foreground" />
               <h2 className="mb-1 font-semibold">{template.title}</h2>
               <p className="mb-4 flex-1 text-sm text-muted-foreground">
                 {template.description}
               </p>
-              <pre className="mb-4 max-h-24 overflow-hidden rounded bg-muted p-2 text-xs text-muted-foreground">
+              <pre className="mb-4 max-h-24 overflow-hidden rounded-md p-2 text-xs text-muted-foreground clay-inset">
                 {template.preview.slice(0, 120)}…
               </pre>
               <Button variant="outline" size="sm" asChild>

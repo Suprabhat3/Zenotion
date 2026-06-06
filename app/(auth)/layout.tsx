@@ -1,27 +1,24 @@
-import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export default async function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Already-authenticated users shouldn't see login/signup.
   const user = await getCurrentUser();
   if (user) redirect("/dashboard");
 
   return (
-    <div className="flex min-h-svh flex-col">
-      <header className="flex items-center justify-between p-4">
-        <Link href="/" className="text-lg font-semibold">
-          Zenotion
-        </Link>
+    <div className="flex min-h-svh flex-col clay-page-bg">
+      <header className="clay-header flex items-center justify-between px-6 py-4">
+        <BrandLogo />
         <ThemeToggle />
       </header>
-      <main className="flex flex-1 items-center justify-center px-4 py-12">
-        {children}
+      <main className="flex flex-1 items-center justify-center px-4 py-10 sm:py-14">
+        <div className="w-full max-w-md">{children}</div>
       </main>
     </div>
   );

@@ -1,8 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Loader2, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Loader2, Settings2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import {
+  getActiveCredentials,
+  getProviderLabel,
+  isAiConfigured,
+} from "@/lib/ai-providers";
+import { openAiSettings, useAiConfig } from "@/lib/ai-storage";
 import { AI_ACTIONS, type AiAction } from "@/lib/validators";
 import type { ApiResponse } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -14,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 const ACTION_LABELS: Record<AiAction, string> = {
   summarize: "Summarize",
@@ -30,6 +37,13 @@ const ACTION_LABELS: Record<AiAction, string> = {
   "clean-markdown": "Clean to markdown",
 };
 
+const ACTION_HINTS: Partial<Record<AiAction, string>> = {
+  summarize: "Short summary of your note",
+  rewrite: "Clearer wording, same meaning",
+  continue: "Pick up where you left off",
+  "generate-title": "Updates the note title",
+};
+
 const NEEDS_INSTRUCTION: AiAction[] = ["change-tone", "translate"];
 
 type AiResult = { result: string; action: AiAction };
@@ -39,17 +53,66 @@ type AiCommandPaletteProps = {
   onApply: (result: string, action: AiAction) => void;
 };
 
+type PaletteView = "commands" | "instruction" | "preview";
+
 export function AiCommandPalette({ content, onApply }: AiCommandPaletteProps) {
+  const aiConfig = useAiConfig();
+  const configured = isAiConfigured(aiConfig);
+  const activeCredentials = getActiveCredentials(aiConfig);
+
   const [open, setOpen] = useState(false);
+  const [view, setView] = useState<PaletteView>("commands");
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
   const [instruction, setInstruction] = useState("");
   const [pendingAction, setPendingAction] = useState<AiAction | null>(null);
+  const [highlightIndex, setHighlightIndex] = useState(0);
+  const [preview, setPreview] = useState<AiResult | null>(null);
+
+  const filtered = useMemo(
+    () =>
+      AI_ACTIONS.filter((action) =>
+        ACTION_LABELS[action].toLowerCase().includes(query.toLowerCase()),
+      ),
+    [query],
+  );
+
+  const resetPalette = useCallback(() => {
+    setView("commands");
+    setQuery("");
+    setInstruction("");
+    setPendingAction(null);
+    setHighlightIndex(0);
+    setPreview(null);
+    setLoading(false);
+  }, []);
+
+  const handleOpenChange = useCallback(
+    (next: boolean) => {
+      if (next && !configured) {
+        openAiSettings();
+        return;
+      }
+
+      setOpen(next);
+      if (next) {
+        resetPalette();
+      }
+    },
+    [configured, resetPalette],
+  );
 
   const runAction = useCallback(
     async (action: AiAction, extraInstruction?: string) => {
       if (!content.trim()) {
         toast.error("Add some content before using AI.");
+        return;
+      }
+
+      const credentials = getActiveCredentials(aiConfig);
+      if (!credentials) {
+        openAiSettings();
+        toast.error("Add an API key in AI settings first.");
         return;
       }
 
@@ -62,6 +125,9 @@ export function AiCommandPalette({ content, onApply }: AiCommandPaletteProps) {
             action,
             content,
             instruction: extraInstruction,
+            provider: aiConfig.activeProvider,
+            model: credentials.model,
+            apiKey: credentials.apiKey,
           }),
         });
 
@@ -72,39 +138,32 @@ export function AiCommandPalette({ content, onApply }: AiCommandPaletteProps) {
           return;
         }
 
-        onApply(json.data.result, action);
-        setOpen(false);
-        setQuery("");
-        setInstruction("");
-        setPendingAction(null);
-        toast.success("AI suggestion applied.");
+        setPreview(json.data);
+        setView("preview");
       } catch {
         toast.error("AI request failed. Please try again.");
       } finally {
         setLoading(false);
       }
     },
-    [content, onApply],
+    [aiConfig, content],
   );
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        setOpen((v) => !v);
+        handleOpenChange(!open);
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
-  const filtered = AI_ACTIONS.filter((action) =>
-    ACTION_LABELS[action].toLowerCase().includes(query.toLowerCase()),
-  );
+  }, [handleOpenChange, open]);
 
   function handleSelect(action: AiAction) {
     if (NEEDS_INSTRUCTION.includes(action)) {
       setPendingAction(action);
+      setView("instruction");
       return;
     }
     void runAction(action);
@@ -116,6 +175,32 @@ export function AiCommandPalette({ content, onApply }: AiCommandPaletteProps) {
     void runAction(pendingAction, instruction || undefined);
   }
 
+  function handleApplyPreview() {
+    if (!preview) return;
+    onApply(preview.result, preview.action);
+    setOpen(false);
+    toast.success("AI suggestion applied.");
+  }
+
+  function handleCommandKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (filtered.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightIndex((index) => (index + 1) % filtered.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightIndex((index) => (index - 1 + filtered.length) % filtered.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      handleSelect(filtered[highlightIndex]);
+    }
+  }
+
+  const providerLabel = configured
+    ? `${getProviderLabel(aiConfig.activeProvider)} · ${activeCredentials?.model}`
+    : "No provider configured";
+
   return (
     <>
       <Button
@@ -123,7 +208,7 @@ export function AiCommandPalette({ content, onApply }: AiCommandPaletteProps) {
         variant="outline"
         size="sm"
         className="gap-2"
-        onClick={() => setOpen(true)}
+        onClick={() => handleOpenChange(true)}
       >
         <Sparkles className="h-4 w-4" />
         AI
@@ -132,16 +217,17 @@ export function AiCommandPalette({ content, onApply }: AiCommandPaletteProps) {
         </kbd>
       </Button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>AI commands</DialogTitle>
-            <DialogDescription>
-              Choose an action to run on your note content.
+            <DialogDescription className="space-y-1">
+              <span className="block">Choose an action to run on your note content.</span>
+              <span className="block text-xs">{providerLabel}</span>
             </DialogDescription>
           </DialogHeader>
 
-          {pendingAction ? (
+          {view === "instruction" && pendingAction ? (
             <form onSubmit={handleInstructionSubmit} className="space-y-3">
               <p className="text-sm font-medium">{ACTION_LABELS[pendingAction]}</p>
               <Input
@@ -150,7 +236,7 @@ export function AiCommandPalette({ content, onApply }: AiCommandPaletteProps) {
                 placeholder={
                   pendingAction === "translate"
                     ? "Target language (e.g. Spanish)"
-                    : "Target tone (e.g. friendly)"
+                    : "Target tone (e.g. friendly, formal)"
                 }
                 autoFocus
               />
@@ -162,39 +248,109 @@ export function AiCommandPalette({ content, onApply }: AiCommandPaletteProps) {
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() => setPendingAction(null)}
+                  onClick={() => {
+                    setPendingAction(null);
+                    setView("commands");
+                  }}
                 >
                   Back
                 </Button>
               </div>
             </form>
+          ) : view === "preview" && preview ? (
+            <div className="space-y-3">
+              <p className="text-sm font-medium">
+                Preview · {ACTION_LABELS[preview.action]}
+              </p>
+              <Textarea
+                value={preview.result}
+                readOnly
+                className="max-h-64 min-h-32 resize-none font-mono text-sm"
+              />
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" onClick={handleApplyPreview}>
+                  Apply to note
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setPreview(null);
+                    setView("commands");
+                  }}
+                >
+                  Discard
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => void runAction(preview.action, instruction || undefined)}
+                  disabled={loading}
+                >
+                  {loading ? "Retrying…" : "Try again"}
+                </Button>
+              </div>
+            </div>
           ) : (
             <div className="space-y-3">
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search commands…"
-                autoFocus
-              />
+              <div className="flex gap-2">
+                <Input
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setHighlightIndex(0);
+                  }}
+                  onKeyDown={handleCommandKeyDown}
+                  placeholder="Search commands…"
+                  autoFocus
+                  disabled={loading}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0"
+                  onClick={openAiSettings}
+                  title="AI settings"
+                >
+                  <Settings2 className="h-4 w-4" />
+                </Button>
+              </div>
+
               <ul className="max-h-64 space-y-0.5 overflow-y-auto">
-                {filtered.map((action) => (
+                {filtered.map((action, index) => (
                   <li key={action}>
                     <button
                       type="button"
                       disabled={loading}
                       onClick={() => handleSelect(action)}
-                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent disabled:opacity-50"
+                      className={`flex w-full flex-col items-start gap-0.5 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent disabled:opacity-50 ${
+                        index === highlightIndex ? "bg-accent" : ""
+                      }`}
                     >
-                      <Sparkles className="h-4 w-4 text-muted-foreground" />
-                      {ACTION_LABELS[action]}
+                      <span className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-muted-foreground" />
+                        {ACTION_LABELS[action]}
+                      </span>
+                      {ACTION_HINTS[action] && (
+                        <span className="pl-6 text-xs text-muted-foreground">
+                          {ACTION_HINTS[action]}
+                        </span>
+                      )}
                     </button>
                   </li>
                 ))}
+                {filtered.length === 0 && (
+                  <li className="px-3 py-6 text-center text-sm text-muted-foreground">
+                    No commands match your search.
+                  </li>
+                )}
               </ul>
+
               {loading && (
                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Working…
+                  Working with {getProviderLabel(aiConfig.activeProvider)}…
                 </p>
               )}
             </div>

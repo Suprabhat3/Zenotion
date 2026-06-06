@@ -4,28 +4,33 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Notion-inspired neutral palette, light + dark. */
+/* Notion-inspired neutral palette with claymorphism tokens. */
 :root {
-  --background: #ffffff;
+  --background: #f4f3f0;
   --foreground: #1f1f1f;
-  --muted: #f7f7f5;
+  --muted: #ebeae6;
   --muted-foreground: #6b7280;
-  --border: #e9e9e7;
-  --input: #e9e9e7;
-  --card: #ffffff;
+  --border: #dddcd8;
+  --input: #e4e3df;
+  --card: #fafaf8;
   --card-foreground: #1f1f1f;
-  --popover: #ffffff;
+  --popover: #fafaf8;
   --popover-foreground: #1f1f1f;
   --primary: #1f1f1f;
   --primary-foreground: #ffffff;
-  --secondary: #f1f1ef;
+  --secondary: #ecebe7;
   --secondary-foreground: #1f1f1f;
-  --accent: #f1f1ef;
+  --accent: #e8e7e3;
   --accent-foreground: #1f1f1f;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
   --ring: #b4b4b2;
-  --radius: 0.5rem;
+  --radius: 0.625rem;
+  --clay-outer: 8px 8px 18px rgba(0, 0, 0, 0.07);
+  --clay-highlight: -6px -6px 14px rgba(255, 255, 255, 0.95);
+  --clay-inset-top: inset 1px 1px 0 rgba(255, 255, 255, 0.85);
+  --clay-inset-shadow: inset 4px 4px 10px rgba(0, 0, 0, 0.06);
+  --clay-inset-highlight: inset -1px -1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .dark {
@@ -35,7 +40,7 @@
   --muted-foreground: #9a9a9a;
   --border: #2f2f2f;
   --input: #2f2f2f;
-  --card: #202020;
+  --card: #222222;
   --card-foreground: #ededed;
   --popover: #252525;
   --popover-foreground: #ededed;
@@ -48,6 +53,11 @@
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --ring: #555555;
+  --clay-outer: 8px 8px 20px rgba(0, 0, 0, 0.45);
+  --clay-highlight: -3px -3px 10px rgba(255, 255, 255, 0.05);
+  --clay-inset-top: inset 1px 1px 0 rgba(255, 255, 255, 0.06);
+  --clay-inset-shadow: inset 4px 4px 12px rgba(0, 0, 0, 0.35);
+  --clay-inset-highlight: inset -1px -1px 0 rgba(255, 255, 255, 0.03);
 }
 
 @theme inline {
@@ -87,30 +97,142 @@ body {
 }
 
 /* Claymorphism — soft 3D surfaces for cards and panels. */
-.clay-surface {
-  background: var(--card);
-  border: 1px solid var(--border);
-  box-shadow:
-    6px 6px 14px rgba(0, 0, 0, 0.06),
-    -4px -4px 12px rgba(255, 255, 255, 0.7),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.6);
+.clay-page-bg {
+  background:
+    radial-gradient(
+      ellipse 120% 80% at 50% -20%,
+      color-mix(in srgb, var(--muted) 70%, var(--background)),
+      var(--background)
+    );
 }
 
-.dark .clay-surface {
-  box-shadow:
-    6px 6px 16px rgba(0, 0, 0, 0.35),
-    -2px -2px 8px rgba(255, 255, 255, 0.04),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.05);
+.clay-surface {
+  background: var(--card);
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  box-shadow: var(--clay-outer), var(--clay-highlight), var(--clay-inset-top);
 }
 
 .clay-inset {
   background: var(--muted);
-  border: 1px solid var(--border);
-  box-shadow: inset 3px 3px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  box-shadow: var(--clay-inset-shadow), var(--clay-inset-highlight);
 }
 
-.dark .clay-inset {
-  box-shadow: inset 3px 3px 10px rgba(0, 0, 0, 0.3);
+.clay-header {
+  background: color-mix(in srgb, var(--card) 92%, var(--background));
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.dark .clay-header {
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.clay-sidebar-shell {
+  --sidebar-width: 15rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: var(--sidebar-width);
+  min-height: 100%;
+  align-self: stretch;
+  overflow: hidden;
+  border-right: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  background: color-mix(in srgb, var(--card) 30%, var(--background));
+  box-shadow: inset -1px 0 0 color-mix(in srgb, var(--foreground) 4%, transparent);
+  transition: width 0.22s ease;
+}
+
+.clay-sidebar-shell-expanded {
+  --sidebar-width: 15rem;
+}
+
+.clay-sidebar-shell-collapsed {
+  --sidebar-width: 3.5rem;
+}
+
+.dark .clay-sidebar-shell {
+  background: color-mix(in srgb, var(--card) 18%, var(--background));
+  box-shadow: inset -1px 0 0 color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+.clay-sidebar {
+  background: transparent;
+}
+
+.clay-sidebar-section {
+  border-radius: calc(var(--radius) - 2px);
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  background: color-mix(in srgb, var(--card) 35%, transparent);
+  padding: 0.25rem;
+  min-height: 2.75rem;
+}
+
+.clay-sidebar-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+}
+
+.clay-nav-item {
+  border-radius: calc(var(--radius) - 2px);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+}
+
+.clay-nav-item:hover {
+  background: color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+.clay-nav-item-active {
+  background: color-mix(in srgb, var(--card) 85%, var(--background));
+  box-shadow: var(--clay-inset-shadow), var(--clay-inset-highlight);
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.clay-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: calc(var(--radius) - 2px);
+  font-size: 0.875rem;
+  font-weight: 700;
+  background: var(--card);
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  box-shadow: var(--clay-outer), var(--clay-highlight), var(--clay-inset-top);
+}
+
+.clay-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.clay-divider::before,
+.clay-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: color-mix(in srgb, var(--border) 90%, transparent);
 }
 
 /* Markdown preview ("prose") styling, theme-aware. */
@@ -288,8 +410,13 @@ body {
 }
 .editor-pane-header {
   flex-shrink: 0;
-  border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--muted) 40%, var(--background));
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  background: color-mix(in srgb, var(--muted) 50%, var(--background));
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.dark .editor-pane-header {
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.03);
 }
 
 /* CodeMirror — force theme sync with app (overrides @uiw light defaults) */

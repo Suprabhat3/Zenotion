@@ -1,8 +1,8 @@
-import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { getSidebarData } from "@/lib/notes";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppShell } from "@/components/app-shell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
 
@@ -17,11 +17,9 @@ export default async function AppLayout({
   const sidebar = await getSidebarData(user.id);
 
   return (
-    <div className="flex min-h-svh flex-col">
-      <header className="flex items-center justify-between border-b px-4 py-3 clay-surface">
-        <Link href="/dashboard" className="text-lg font-semibold">
-          Zenotion
-        </Link>
+    <div className="flex min-h-svh flex-col clay-page-bg">
+      <header className="clay-header flex items-center justify-between px-4 py-3 sm:px-6">
+        <BrandLogo href="/dashboard" />
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <UserMenu
@@ -31,12 +29,7 @@ export default async function AppLayout({
           />
         </div>
       </header>
-      <div className="flex min-h-0 flex-1">
-        <AppSidebar sidebar={sidebar} />
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          {children}
-        </main>
-      </div>
+      <AppShell sidebar={sidebar}>{children}</AppShell>
     </div>
   );
 }

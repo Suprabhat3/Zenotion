@@ -14,7 +14,7 @@ export default async function HomePage() {
   const user = await getCurrentUser();
 
   return (
-    <div className="min-h-svh">
+    <div className="min-h-svh clay-page-bg">
       <SiteHeader />
 
       <main>
@@ -68,7 +68,7 @@ export default async function HomePage() {
           ].map(({ icon: Icon, title, desc }) => (
             <div
               key={title}
-              className="rounded-lg p-5 text-left clay-surface"
+              className="rounded-xl p-5 text-left clay-surface"
             >
               <Icon className="mb-3 h-8 w-8 text-muted-foreground" />
               <h3 className="mb-1 font-semibold">{title}</h3>
@@ -77,7 +77,7 @@ export default async function HomePage() {
           ))}
         </section>
 
-        <section className="border-t bg-muted/30 px-6 py-16">
+        <section className="border-t border-border/60 bg-muted/40 px-6 py-16">
           <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
             <Zap className="h-10 w-10 text-muted-foreground" />
             <h2 className="text-2xl font-semibold">Built for clarity</h2>
@@ -92,7 +92,7 @@ export default async function HomePage() {
         </section>
       </main>
 
-      <footer className="border-t px-6 py-8 text-center text-sm text-muted-foreground">
+      <footer className="border-t border-border/60 px-6 py-8 text-center text-sm text-muted-foreground">
         © {new Date().getFullYear()} Zenotion
       </footer>
     </div>

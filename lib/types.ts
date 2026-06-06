@@ -33,6 +33,7 @@ export type NoteDetail = NoteSummary & {
 };
 
 export type SidebarData = {
+  totalNotes: number;
   folders: FolderSummary[];
   tags: TagSummary[];
 };

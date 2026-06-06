@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, LogOut, User } from "lucide-react";
+import { LayoutDashboard, LogOut, Sparkles, User } from "lucide-react";
 import { signOut } from "@/lib/auth-client";
+import { openAiSettings } from "@/lib/ai-storage";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -74,6 +75,10 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
             <LayoutDashboard className="h-4 w-4" />
             Dashboard
           </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={openAiSettings}>
+          <Sparkles className="h-4 w-4" />
+          AI settings
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="h-4 w-4" />

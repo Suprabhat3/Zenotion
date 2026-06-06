@@ -16,8 +16,17 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
-export function CreateTagDialog() {
+type CreateTagDialogProps = {
+  trigger?: "icon" | "empty";
+  className?: string;
+};
+
+export function CreateTagDialog({
+  trigger = "icon",
+  className,
+}: CreateTagDialogProps) {
   const [open, setOpen] = useState(false);
 
   async function handleSubmit(formData: FormData) {
@@ -33,10 +42,21 @@ export function CreateTagDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-6 w-6">
-          <Plus className="h-3.5 w-3.5" />
-          <span className="sr-only">New tag</span>
-        </Button>
+        {trigger === "icon" ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn("h-7 w-7 shrink-0", className)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span className="sr-only">New tag</span>
+          </Button>
+        ) : (
+          <Button variant="ghost" size="sm" className={cn("h-7 text-xs", className)}>
+            <Plus className="h-3.5 w-3.5" />
+            Add tag
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 import { getPublicNoteBySlug } from "@/lib/notes";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { ShareNoteActions } from "@/components/share-note-actions";
@@ -33,13 +33,13 @@ export default async function SharePage({ params }: PageProps) {
   }).format(note.updatedAt);
 
   return (
-    <div className="min-h-svh bg-background">
-      <header className="border-b px-6 py-4">
+    <div className="min-h-svh clay-page-bg">
+      <header className="clay-header px-6 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <Link href="/" className="text-sm font-semibold">
-            Zenotion
-          </Link>
-          <span className="text-xs text-muted-foreground">Shared note</span>
+          <BrandLogo />
+          <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
+            Shared note
+          </span>
         </div>
       </header>
       <article className="mx-auto max-w-3xl px-6 py-10">
@@ -56,7 +56,7 @@ export default async function SharePage({ params }: PageProps) {
             content={note.content}
           />
         </div>
-        <div className="clay-surface rounded-lg p-6 sm:p-8">
+        <div className="rounded-xl p-6 sm:p-8 clay-surface">
           <MarkdownPreview content={note.content} showCopyAll />
         </div>
       </article>
