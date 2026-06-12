@@ -6,6 +6,7 @@ const noteListSelect = {
   title: true,
   content: true,
   isPublic: true,
+  isFavorite: true,
   shareSlug: true,
   folderId: true,
   updatedAt: true,
@@ -39,7 +40,7 @@ export async function getUserNote(
 }
 
 export async function getSidebarData(userId: string): Promise<SidebarData> {
-  const [folders, tags, totalNotes] = await Promise.all([
+  const [folders, tags, totalNotes, favorites] = await Promise.all([
     prisma.folder.findMany({
       where: { userId },
       orderBy: { name: "asc" },
@@ -55,10 +56,17 @@ export async function getSidebarData(userId: string): Promise<SidebarData> {
       select: { id: true, name: true, color: true },
     }),
     prisma.note.count({ where: { userId } }),
+    prisma.note.findMany({
+      where: { userId, isFavorite: true },
+      orderBy: { updatedAt: "desc" },
+      take: 10,
+      select: { id: true, title: true },
+    }),
   ]);
 
   return {
     totalNotes,
+    favorites,
     folders: folders.map((f) => ({
       id: f.id,
       name: f.name,
@@ -66,6 +74,38 @@ export async function getSidebarData(userId: string): Promise<SidebarData> {
     })),
     tags,
   };
+}
+
+/**
+ * Case-insensitive search across the user's note titles and content.
+ * An empty query returns the most recently edited notes instead.
+ */
+export async function searchUserNotes(userId: string, query: string, limit = 20) {
+  const trimmed = query.trim();
+
+  return prisma.note.findMany({
+    where: {
+      userId,
+      ...(trimmed
+        ? {
+            OR: [
+              { title: { contains: trimmed, mode: "insensitive" } },
+              { content: { contains: trimmed, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
+    orderBy: [{ isFavorite: "desc" }, { updatedAt: "desc" }],
+    take: limit,
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      isFavorite: true,
+      updatedAt: true,
+      folder: { select: { name: true } },
+    },
+  });
 }
 
 export async function getPublicNoteBySlug(slug: string) {

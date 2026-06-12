@@ -89,7 +89,7 @@ export function AiSettingsDialog({ open, onOpenChange }: AiSettingsDialogProps) 
     setShowKey(false);
   }
 
-  function handleSave() {
+  async function handleSave() {
     const meta = AI_PROVIDER_META[selectedProvider];
     const model = form.customModel ? form.model.trim() : form.model;
     const apiKey = form.apiKey.trim() || storedKey?.trim() || "";
@@ -104,17 +104,17 @@ export function AiSettingsDialog({ open, onOpenChange }: AiSettingsDialogProps) 
       return;
     }
 
-    updateProviderCredentials(selectedProvider, {
+    await updateProviderCredentials(selectedProvider, {
       apiKey,
       model,
     });
-    setActiveProvider(selectedProvider);
+    await setActiveProvider(selectedProvider);
     toast.success(`${meta.name} saved and set as active provider.`);
     handleOpenChange(false);
   }
 
-  function handleClearKey() {
-    clearProviderCredentials(selectedProvider);
+  async function handleClearKey() {
+    await clearProviderCredentials(selectedProvider);
     setForm((current) => ({ ...current, apiKey: "" }));
     toast.success("API key removed from this browser.");
   }
@@ -140,22 +140,51 @@ export function AiSettingsDialog({ open, onOpenChange }: AiSettingsDialogProps) 
           </DialogDescription>
         </DialogHeader>
 
-        <div className="clay-inset space-y-3 rounded-lg p-4 text-sm">
-          <div className="flex items-start gap-2">
-            <Shield className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-            <div className="space-y-1">
-              <p className="font-medium">Your keys stay on your device</p>
-              <p className="text-muted-foreground">
-                API keys are saved only in this browser&apos;s local storage. We
-                never store them in our database. When you run an AI command, your
-                key is sent securely to our server only to forward the request to
-                your chosen provider — it is not logged or persisted.
+        {/* Trust / security banner */}
+        <div className="clay-inset rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/10 dark:text-emerald-400">
+              <Shield className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-semibold leading-none">
+                  Your API key is encrypted before saving
+                </p>
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-400">
+                  <Shield className="h-2.5 w-2.5" />
+                  AES-256 encrypted
+                </span>
+              </div>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                We use AES-256-GCM encryption — the same standard banks use — to
+                encrypt your key before it ever touches browser storage. Browser
+                extensions and other tabs on the same device can&apos;t read it in
+                plain text. Your key is never stored in our database; it is only
+                decrypted on-device when you trigger an AI action.
               </p>
+              <div className="flex flex-wrap gap-3 pt-0.5 text-[11px] text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                  Never sent to our database
+                </span>
+                <span className="flex items-center gap-1">
+                  <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                  Encrypted at rest in your browser
+                </span>
+                <span className="flex items-center gap-1">
+                  <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                  Not logged or cached server-side
+                </span>
+              </div>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Active provider: <span className="font-medium text-foreground">{activeLabel}</span>
-          </p>
+          <div className="mt-3 border-t border-border/50 pt-3">
+            <p className="text-xs text-muted-foreground">
+              Active provider:{" "}
+              <span className="font-medium text-foreground">{activeLabel}</span>
+            </p>
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-[11rem_minmax(0,1fr)]">
@@ -238,11 +267,12 @@ export function AiSettingsDialog({ open, onOpenChange }: AiSettingsDialogProps) 
                   {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
-              {hasStoredKey && !form.apiKey && (
-                <p className="text-xs text-muted-foreground">
-                  A key is already saved for {meta.name} on this device.
-                </p>
-              )}
+              <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Shield className="h-3 w-3 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                {hasStoredKey && !form.apiKey
+                  ? `Encrypted key saved for ${meta.name} — enter a new one to replace it.`
+                  : "Your key will be AES-256 encrypted before being saved to this browser."}
+              </p>
             </div>
 
             <div className="space-y-1.5">

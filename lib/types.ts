@@ -22,6 +22,7 @@ export type NoteSummary = {
   title: string;
   content: string;
   isPublic: boolean;
+  isFavorite: boolean;
   shareSlug: string | null;
   folderId: string | null;
   updatedAt: Date;
@@ -32,8 +33,24 @@ export type NoteDetail = NoteSummary & {
   createdAt: Date;
 };
 
+export type FavoriteNoteSummary = {
+  id: string;
+  title: string;
+};
+
 export type SidebarData = {
   totalNotes: number;
+  favorites: FavoriteNoteSummary[];
   folders: FolderSummary[];
   tags: TagSummary[];
+};
+
+/** Lightweight shape returned by `GET /api/notes/search` for the quick switcher. */
+export type NoteSearchResult = {
+  id: string;
+  title: string;
+  excerpt: string;
+  isFavorite: boolean;
+  folderName: string | null;
+  updatedAt: string;
 };

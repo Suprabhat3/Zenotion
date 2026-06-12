@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { X } from "lucide-react";
+import { Clock, X } from "lucide-react";
 import { getCurrentUser } from "@/lib/session";
 import { getSidebarData, getUserNotes } from "@/lib/notes";
 import { NoteList } from "@/components/note-list";
@@ -59,6 +59,10 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       ? `No notes tagged "${activeTag.name}" yet.`
       : undefined;
 
+  // Notes are already ordered by updatedAt desc, so the head of the list is
+  // the most recently edited work. Only worth a strip once there's enough to scan.
+  const recentNotes = !hasFilter && notes.length > 3 ? notes.slice(0, 4) : [];
+
   return (
     <div className="flex-1 overflow-y-auto p-6">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -84,6 +88,35 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           )}
         </div>
       </div>
+
+      {recentNotes.length > 0 && (
+        <section className="mb-8">
+          <h2 className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Clock className="h-3.5 w-3.5" />
+            Recently edited
+          </h2>
+          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {recentNotes.map((note) => (
+              <li key={note.id}>
+                <Link
+                  href={`/notes/${note.id}`}
+                  className="clay-surface block rounded-xl px-4 py-3 transition-all hover:-translate-y-0.5"
+                >
+                  <p className="truncate text-sm font-medium">
+                    {note.title || "Untitled"}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {new Intl.DateTimeFormat("en", {
+                      month: "short",
+                      day: "numeric",
+                    }).format(note.updatedAt)}
+                  </p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <NoteList notes={filteredNotes} emptyMessage={emptyMessage} />
     </div>

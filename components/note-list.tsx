@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, Globe } from "lucide-react";
+import { FileText, Globe, Star } from "lucide-react";
 import type { NoteSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -45,9 +45,14 @@ export function NoteList({ notes, emptyMessage }: NoteListProps) {
           >
             <div className="mb-2 flex items-start justify-between gap-2">
               <h3 className="font-medium leading-snug">{note.title}</h3>
-              {note.isPublic && (
-                <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
-              )}
+              <span className="flex shrink-0 items-center gap-1.5">
+                {note.isFavorite && (
+                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                )}
+                {note.isPublic && (
+                  <Globe className="h-4 w-4 text-muted-foreground" />
+                )}
+              </span>
             </div>
             <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
               {excerpt(note.content)}

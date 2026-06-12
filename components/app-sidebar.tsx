@@ -4,12 +4,15 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
+  FileText,
   Folder,
   Hash,
   LayoutDashboard,
   PanelLeft,
   PanelLeftClose,
   Plus,
+  Search,
+  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SidebarData } from "@/lib/types";
@@ -17,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { createNote } from "@/app/(app)/notes/actions";
 import { CreateFolderDialog } from "@/components/create-folder-dialog";
 import { CreateTagDialog } from "@/components/create-tag-dialog";
+import { openQuickSwitcher } from "@/components/quick-switcher";
 
 type AppSidebarProps = {
   sidebar: SidebarData;
@@ -130,31 +134,93 @@ export function AppSidebar({
 
         <SidebarSection title="Browse" action={null} collapsed={collapsed}>
           {collapsed ? (
-            <SidebarIconButton
-              href="/dashboard"
-              label="All notes"
-              active={isAllNotesActive}
-            >
-              <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-            </SidebarIconButton>
+            <>
+              <button
+                type="button"
+                onClick={openQuickSwitcher}
+                title="Search notes"
+                aria-label="Search notes"
+                className="clay-nav-item flex h-9 w-9 items-center justify-center"
+              >
+                <Search className="h-4 w-4 text-muted-foreground" />
+              </button>
+              <SidebarIconButton
+                href="/dashboard"
+                label="All notes"
+                active={isAllNotesActive}
+              >
+                <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+              </SidebarIconButton>
+            </>
           ) : (
-            <Link
-              href="/dashboard"
-              className={cn(
-                "clay-nav-item flex items-center justify-between gap-2 px-2.5 py-2 text-sm",
-                isAllNotesActive && "clay-nav-item-active",
-              )}
-            >
-              <span className="flex items-center gap-2">
-                <LayoutDashboard className="h-4 w-4 shrink-0 text-muted-foreground" />
-                All notes
-              </span>
-              <span className="text-xs tabular-nums text-muted-foreground">
-                {sidebar.totalNotes}
-              </span>
-            </Link>
+            <>
+              <button
+                type="button"
+                onClick={openQuickSwitcher}
+                className="clay-nav-item flex w-full items-center justify-between gap-2 px-2.5 py-2 text-sm"
+              >
+                <span className="flex items-center gap-2">
+                  <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  Search
+                </span>
+                <kbd className="rounded border bg-muted px-1.5 text-[10px] text-muted-foreground">
+                  Ctrl P
+                </kbd>
+              </button>
+              <Link
+                href="/dashboard"
+                className={cn(
+                  "clay-nav-item flex items-center justify-between gap-2 px-2.5 py-2 text-sm",
+                  isAllNotesActive && "clay-nav-item-active",
+                )}
+              >
+                <span className="flex items-center gap-2">
+                  <LayoutDashboard className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  All notes
+                </span>
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {sidebar.totalNotes}
+                </span>
+              </Link>
+            </>
           )}
         </SidebarSection>
+
+        {sidebar.favorites.length > 0 && (
+          <SidebarSection title="Favorites" action={null} collapsed={collapsed}>
+            {collapsed ? (
+              <>
+                {sidebar.favorites.slice(0, 4).map((note) => (
+                  <SidebarIconButton
+                    key={note.id}
+                    href={`/notes/${note.id}`}
+                    label={note.title || "Untitled"}
+                    active={pathname === `/notes/${note.id}`}
+                  >
+                    <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  </SidebarIconButton>
+                ))}
+              </>
+            ) : (
+              <ul className="space-y-0.5">
+                {sidebar.favorites.map((note) => (
+                  <li key={note.id}>
+                    <Link
+                      href={`/notes/${note.id}`}
+                      className={cn(
+                        "clay-nav-item flex items-center gap-2 px-2.5 py-2 text-sm",
+                        pathname === `/notes/${note.id}` && "clay-nav-item-active",
+                      )}
+                    >
+                      <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{note.title || "Untitled"}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </SidebarSection>
+        )}
 
         <SidebarSection
           title="Folders"

@@ -36,6 +36,9 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   const editor = useEditor({
     immediatelyRender: false,
+    // The editor is remounted (new `key`) when AI results or mode switches
+    // replace the content — focus the end so the user can keep typing.
+    autofocus: "end",
     extensions: [
       StarterKit.configure({
         codeBlock: false,

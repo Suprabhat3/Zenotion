@@ -17,6 +17,7 @@ import {
   renameNoteSchema,
   tagIdSchema,
   tagSchema,
+  toggleNoteFavoriteSchema,
   toggleNotePublicSchema,
   updateNoteSchema,
 } from "@/lib/validators";
@@ -156,6 +157,29 @@ export async function toggleNotePublic(
       shareSlug: input.isPublic ? shareSlug : null,
     },
     select: { isPublic: true, shareSlug: true },
+  });
+
+  revalidateApp();
+  revalidatePath(`/notes/${input.noteId}`);
+
+  return updated;
+}
+
+export async function toggleNoteFavorite(
+  formData: FormData,
+): Promise<{ isFavorite: boolean }> {
+  const user = await requireUser();
+  const input = parseOrThrow(toggleNoteFavoriteSchema, {
+    noteId: formData.get("noteId"),
+    isFavorite: formData.get("isFavorite") === "true",
+  });
+
+  await assertNoteOwnership(user.id, input.noteId);
+
+  const updated = await prisma.note.update({
+    where: { id: input.noteId },
+    data: { isFavorite: input.isFavorite },
+    select: { isFavorite: true },
   });
 
   revalidateApp();

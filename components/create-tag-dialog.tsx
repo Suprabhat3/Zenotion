@@ -23,13 +23,32 @@ type CreateTagDialogProps = {
   className?: string;
 };
 
+const TAG_COLORS = [
+  { name: "Gray", value: "#9b9a97" },
+  { name: "Brown", value: "#64473a" },
+  { name: "Orange", value: "#d9730d" },
+  { name: "Yellow", value: "#dfab01" },
+  { name: "Green", value: "#0f7b6c" },
+  { name: "Blue", value: "#0b6e99" },
+  { name: "Purple", value: "#6940a5" },
+  { name: "Pink", value: "#ad1a72" },
+  { name: "Red", value: "#e03e3e" },
+] as const;
+
 export function CreateTagDialog({
   trigger = "icon",
   className,
 }: CreateTagDialogProps) {
   const [open, setOpen] = useState(false);
+  const [color, setColor] = useState<string | null>(null);
+
+  function handleOpenChange(next: boolean) {
+    setOpen(next);
+    if (next) setColor(null);
+  }
 
   async function handleSubmit(formData: FormData) {
+    if (color) formData.set("color", color);
     try {
       await createTag(formData);
       setOpen(false);
@@ -40,7 +59,7 @@ export function CreateTagDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger === "icon" ? (
           <Button
@@ -69,14 +88,27 @@ export function CreateTagDialog({
             <Input id="tag-name" name="name" placeholder="ideas" required />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="tag-color">Color (optional)</Label>
-            <Input
-              id="tag-color"
-              name="color"
-              type="text"
-              placeholder="#6366f1"
-              pattern="^#[0-9a-fA-F]{6}$"
-            />
+            <Label>Color (optional)</Label>
+            <div className="flex flex-wrap gap-2">
+              {TAG_COLORS.map((option) => {
+                const selected = color === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    title={option.name}
+                    aria-label={option.name}
+                    aria-pressed={selected}
+                    onClick={() => setColor(selected ? null : option.value)}
+                    className={cn(
+                      "h-7 w-7 rounded-full ring-offset-2 ring-offset-background transition-all hover:scale-110",
+                      selected && "ring-2 ring-foreground",
+                    )}
+                    style={{ backgroundColor: option.value }}
+                  />
+                );
+              })}
+            </div>
           </div>
           <DialogFooter>
             <Button type="submit">Create tag</Button>

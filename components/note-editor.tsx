@@ -4,8 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Check,
+  Download,
   Loader2,
   MoreHorizontal,
+  Star,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -16,6 +18,7 @@ import {
   assignNoteTags,
   deleteNote,
   moveNote,
+  toggleNoteFavorite,
 } from "@/app/(app)/notes/actions";
 import { ShareDialog } from "@/components/share-dialog";
 import { AiCommandPalette } from "@/components/ai-command-palette";
@@ -70,6 +73,7 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
   const [selectedTagIds, setSelectedTagIds] = useState(
     note.tags.map((t) => t.tagId),
   );
+  const [isFavorite, setIsFavorite] = useState(note.isFavorite);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [richKey, setRichKey] = useState(0);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -165,6 +169,33 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
     await deleteNote(formData);
   }
 
+  async function handleFavoriteToggle() {
+    const next = !isFavorite;
+    setIsFavorite(next);
+    const formData = new FormData();
+    formData.set("noteId", note.id);
+    formData.set("isFavorite", String(next));
+    try {
+      await toggleNoteFavorite(formData);
+      router.refresh();
+    } catch {
+      setIsFavorite(!next);
+      toast.error("Could not update favorite.");
+    }
+  }
+
+  function handleExport() {
+    const safeTitle = (title.trim() || "untitled").replace(/[\\/:*?"<>|]/g, "-");
+    const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${safeTitle}.md`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    toast.success("Note exported as Markdown.");
+  }
+
   function handleAiApply(result: string, action: AiAction) {
     if (action === "generate-title") {
       setTitle(result.replace(/^#+\s*/, "").trim());
@@ -185,6 +216,8 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
     error: "Save failed",
   };
 
+  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-background">
       {/* Title bar */}
@@ -202,6 +235,9 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
         <EditorModeToggle mode={editorMode} onChange={handleModeChange} />
 
         <div className="flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 hidden text-xs tabular-nums text-muted-foreground md:inline">
+            {wordCount === 1 ? "1 word" : `${wordCount} words`}
+          </span>
           {saveStatus !== "idle" && (
             <span
               className={`mr-1 flex items-center gap-1 text-xs ${
@@ -217,6 +253,20 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
               {statusLabel[saveStatus]}
             </span>
           )}
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleFavoriteToggle}
+            title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Star
+              className={`h-4 w-4 ${
+                isFavorite ? "fill-amber-400 text-amber-400" : ""
+              }`}
+            />
+          </Button>
 
           <CopyButton text={content} label="Copy" />
 
@@ -256,6 +306,11 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
                   </DropdownMenuCheckboxItem>
                 ))
               )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleExport}>
+                <Download className="h-4 w-4" />
+                Export as Markdown
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 

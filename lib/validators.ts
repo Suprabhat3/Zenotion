@@ -81,6 +81,15 @@ export const toggleNotePublicSchema = z.object({
   isPublic: z.boolean(),
 });
 
+export const toggleNoteFavoriteSchema = z.object({
+  noteId: z.string().cuid(),
+  isFavorite: z.boolean(),
+});
+
+export const searchNotesSchema = z.object({
+  q: z.string().trim().max(200).optional().default(""),
+});
+
 export const assignTagsSchema = z.object({
   noteId: z.string().cuid(),
   tagIds: z.array(z.string().cuid()),

@@ -48,7 +48,7 @@ function CodeBlock({
           className="h-7 w-7 bg-white/10 text-white/80 hover:bg-white/20 hover:text-white"
         />
       </div>
-      <pre className="!m-0 !rounded-none !border-0 !bg-transparent !p-0">
+      <pre className="m-0! rounded-none! border-0! bg-transparent! p-0!">
         <code className={cn("hljs block overflow-x-auto p-4 text-sm", className)}>
           {children}
         </code>
