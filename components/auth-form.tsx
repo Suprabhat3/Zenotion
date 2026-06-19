@@ -65,7 +65,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
   }
 
   return (
-    <Card className="w-full max-w-md rounded-xl">
+    <Card className="w-full max-w-md rounded-xl clay-lift-subtle clay-lift transition-shadow duration-300">
       <CardHeader className="space-y-3 pb-2 text-center">
         <BrandLogo className="flex justify-center"/>
         <div className="space-y-1.5">
@@ -139,7 +139,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-[color,transform] duration-200 hover:scale-110 hover:text-foreground"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
@@ -167,7 +167,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
             Already have an account?{" "}
             <Link
               href="/login"
-              className="font-medium text-foreground underline-offset-4 hover:underline"
+              className="link-underline-grow font-medium text-foreground"
             >
               Sign in
             </Link>
@@ -177,7 +177,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
             New here?{" "}
             <Link
               href="/signup"
-              className="font-medium text-foreground underline-offset-4 hover:underline"
+              className="link-underline-grow font-medium text-foreground"
             >
               Create an account
             </Link>

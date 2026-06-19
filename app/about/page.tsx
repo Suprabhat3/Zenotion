@@ -17,7 +17,7 @@ export default async function AboutPage() {
       <SiteHeader />
 
       <main className="mx-auto max-w-2xl px-6 py-16">
-        <div className="rounded-xl p-8 clay-surface">
+        <div className="public-fade-up rounded-xl p-8 clay-surface clay-lift-subtle clay-lift">
           <h1 className="mb-6 text-3xl font-bold">About Zenotion</h1>
           <div className="space-y-4 leading-relaxed text-muted-foreground">
           <p>

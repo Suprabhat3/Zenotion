@@ -42,13 +42,13 @@ export default async function SharePage({ params }: PageProps) {
       <header className="clay-header px-6 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <BrandLogo />
-          <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
+          <span className="ambient-glow rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
             Shared note
           </span>
         </div>
       </header>
       <article className="mx-auto max-w-3xl px-6 py-10">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="public-fade-up mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="mb-2 text-3xl font-bold">{note.title}</h1>
             <p className="text-sm text-muted-foreground">
@@ -67,7 +67,7 @@ export default async function SharePage({ params }: PageProps) {
             />
           </div>
         </div>
-        <div className="rounded-xl p-6 sm:p-8 clay-surface">
+        <div className="public-fade-up public-fade-up-delay-1 rounded-xl p-6 sm:p-8 clay-surface clay-lift-subtle clay-lift">
           <MarkdownPreview content={note.content} showCopyAll />
         </div>
       </article>

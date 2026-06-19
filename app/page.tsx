@@ -58,16 +58,16 @@ export default async function HomePage() {
       <SiteHeader />
 
       <main>
-        <section className="mx-auto max-w-4xl px-6 py-20 text-center">
-          <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
+        <section className="public-hero-glow mx-auto max-w-4xl px-6 py-20 text-center">
+          <h1 className="public-fade-up mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
             Notes that think with you
           </h1>
-          <p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground">
+          <p className="public-fade-up public-fade-up-delay-1 mx-auto mb-8 max-w-2xl text-lg text-muted-foreground">
             Zenotion is a Notion-style workspace for markdown notes — organize
             with folders and tags, preview as you write, share publicly, and
             supercharge drafts with AI.
           </p>
-          <div className="flex flex-wrap justify-center gap-3">
+          <div className="public-fade-up public-fade-up-delay-2 flex flex-wrap justify-center gap-3">
             {user ? (
               <Button size="lg" asChild>
                 <Link href="/dashboard">Go to dashboard</Link>
@@ -105,29 +105,43 @@ export default async function HomePage() {
               title: "AI palette",
               desc: "Summarize, rewrite, outline, and more — in one keystroke.",
             },
-          ].map(({ icon: Icon, title, desc }) => (
+          ].map(({ icon: Icon, title, desc }, index) => {
+            const delayClass =
+              (
+                [
+                  "public-fade-up-delay-1",
+                  "public-fade-up-delay-2",
+                  "public-fade-up-delay-3",
+                  "public-fade-up-delay-4",
+                ] as const
+              )[index] ?? "public-fade-up-delay-5";
+
+            return (
             <div
               key={title}
-              className="rounded-xl p-5 text-left clay-surface"
+              className={`group rounded-xl p-5 text-left clay-surface clay-lift public-fade-up ${delayClass}`}
             >
-              <Icon className="mb-3 h-8 w-8 text-muted-foreground" />
+              <Icon className="icon-bounce-hover mb-3 h-8 w-8 text-muted-foreground" />
               <h3 className="mb-1 font-semibold">{title}</h3>
               <p className="text-sm text-muted-foreground">{desc}</p>
             </div>
-          ))}
+            );
+          })}
         </section>
 
         <section className="border-t border-border/60 bg-muted/40 px-6 py-16">
           <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
-            <Zap className="h-10 w-10 text-muted-foreground" />
-            <h2 className="text-2xl font-semibold">Built for clarity</h2>
-            <p className="text-muted-foreground">
+            <Zap className="ambient-float h-10 w-10 text-muted-foreground" />
+            <h2 className="public-fade-up text-2xl font-semibold">Built for clarity</h2>
+            <p className="public-fade-up public-fade-up-delay-1 text-muted-foreground">
               Autosave, dark mode, and a calm interface — so you can focus on
               the words, not the tool.
             </p>
+            <div className="public-fade-up public-fade-up-delay-2">
             <Button asChild>
               <Link href="/about">Learn more</Link>
             </Button>
+            </div>
           </div>
         </section>
       </main>
@@ -169,13 +183,13 @@ export default async function HomePage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={label}
-                className="rounded-full p-2 text-muted-foreground transition-colors hover:text-foreground clay-surface"
+                className="social-icon-hover rounded-full p-2 text-muted-foreground clay-surface"
               >
                 <Icon className="h-5 w-5" />
               </a>
             ))}
           </div>
-          <p>Built by <a href="https://github.com/suprabhat3" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Suprabhat </a> © {new Date().getFullYear()} Zenotion</p>
+          <p>Built by <a href="https://github.com/suprabhat3" target="_blank" rel="noopener noreferrer" className="link-underline-grow text-primary">Suprabhat </a> © {new Date().getFullYear()} Zenotion</p>
         </div>
       </footer>
     </div>

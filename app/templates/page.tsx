@@ -64,7 +64,7 @@ export default async function TemplatesPage() {
       <SiteHeader />
 
       <main className="mx-auto max-w-5xl px-6 py-12">
-        <div className="mb-8">
+        <div className="public-fade-up mb-8">
           <h1 className="mb-2 text-3xl font-bold">Note templates</h1>
           <p className="text-muted-foreground">
             Starter structures you can copy into a new note after signing up.
@@ -75,12 +75,24 @@ export default async function TemplatesPage() {
         </div>
 
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {TEMPLATES.map((template) => (
+          {TEMPLATES.map((template, index) => {
+            const delayClass =
+              (
+                [
+                  "public-fade-up-delay-1",
+                  "public-fade-up-delay-2",
+                  "public-fade-up-delay-3",
+                  "public-fade-up-delay-4",
+                  "public-fade-up-delay-5",
+                ] as const
+              )[index] ?? "public-fade-up-delay-5";
+
+            return (
             <li
               key={template.id}
-              className="flex flex-col rounded-xl p-5 clay-surface"
+              className={`group flex flex-col rounded-xl p-5 clay-surface clay-lift public-fade-up ${delayClass}`}
             >
-              <FileText className="mb-3 h-8 w-8 text-muted-foreground" />
+              <FileText className="icon-bounce-hover mb-3 h-8 w-8 text-muted-foreground" />
               <h2 className="mb-1 font-semibold">{template.title}</h2>
               <p className="mb-4 flex-1 text-sm text-muted-foreground">
                 {template.description}
@@ -94,7 +106,8 @@ export default async function TemplatesPage() {
                 isLoggedIn={isLoggedIn}
               />
             </li>
-          ))}
+            );
+          })}
         </ul>
       </main>
     </div>
