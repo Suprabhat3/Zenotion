@@ -7,6 +7,7 @@ import {
   Download,
   Loader2,
   MoreHorizontal,
+  Printer,
   Star,
   Trash2,
   TriangleAlert,
@@ -236,6 +237,11 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
     toast.success("Note exported as Markdown.");
   }
 
+  // Browser print dialog → "Save as PDF". Print CSS isolates #note-print-area.
+  function handlePrint() {
+    window.print();
+  }
+
   function handleAiApply(result: string, action: AiAction) {
     if (action === "generate-title") {
       setTitle(result.replace(/^#+\s*/, "").trim());
@@ -354,6 +360,10 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
                 <Download className="h-4 w-4" />
                 Export as Markdown
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={handlePrint}>
+                <Printer className="h-4 w-4" />
+                Print / Save as PDF
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -410,6 +420,13 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
           </div>
         </div>
       )}
+
+      {/* Print-only surface. Hidden on screen; isolated by @media print CSS so
+          "Print / Save as PDF" produces a clean, rendered document. */}
+      <div id="note-print-area" className="hidden print:block" aria-hidden>
+        <h1 className="mb-4 text-3xl font-bold">{title || "Untitled"}</h1>
+        <MarkdownPreview content={content} />
+      </div>
     </div>
   );
 }

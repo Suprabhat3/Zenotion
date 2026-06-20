@@ -666,3 +666,31 @@ body {
 .markdown-cm-editor .cm-activeLineGutter {
   background-color: var(--accent) !important;
 }
+
+/* Print / "Save as PDF": hide the app chrome and show only the note content.
+   The visibility trick isolates #note-print-area regardless of DOM nesting. */
+@media print {
+  body {
+    background: #fff !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #note-print-area,
+  #note-print-area * {
+    visibility: visible;
+  }
+  #note-print-area {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    padding: 1.5rem 0.5rem;
+    color: #111;
+  }
+  /* Avoid awkward breaks inside code blocks, tables, and diagrams. */
+  #note-print-area pre,
+  #note-print-area table,
+  #note-print-area .mermaid-diagram {
+    break-inside: avoid;
+  }
+}

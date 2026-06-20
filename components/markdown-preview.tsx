@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import rehypeSanitize from "rehype-sanitize";
 import { CopyButton } from "@/components/copy-button";
+import { MermaidDiagram } from "@/components/mermaid-diagram";
 import { markdownSanitizeSchema } from "@/lib/markdown-sanitize";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,10 @@ function CodeBlock({
   const langMatch = /language-([\w-]+)/.exec(className ?? "");
   const language = langMatch?.[1] ?? "text";
   const code = extractText(children).replace(/\n$/, "");
+
+  if (language === "mermaid") {
+    return <MermaidDiagram chart={code} />;
+  }
 
   return (
     <div className="code-block-group group relative not-prose my-4 overflow-hidden rounded-lg border border-border bg-[#0d1117]">
