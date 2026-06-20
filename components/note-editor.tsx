@@ -9,6 +9,7 @@ import {
   MoreHorizontal,
   Star,
   Trash2,
+  TriangleAlert,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { AiAction } from "@/lib/validators";
@@ -240,16 +241,19 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
           </span>
           {saveStatus !== "idle" && (
             <span
-              className={`mr-1 flex items-center gap-1 text-xs ${
+              className={`mr-1 flex items-center gap-1 text-xs transition-colors ${
                 saveStatus === "error"
                   ? "text-destructive"
-                  : "text-muted-foreground"
+                  : saveStatus === "saved"
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-muted-foreground"
               }`}
             >
               {saveStatus === "saving" && (
                 <Loader2 className="h-3 w-3 animate-spin" />
               )}
               {saveStatus === "saved" && <Check className="h-3 w-3" />}
+              {saveStatus === "error" && <TriangleAlert className="h-3 w-3" />}
               {statusLabel[saveStatus]}
             </span>
           )}
