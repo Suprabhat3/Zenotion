@@ -132,6 +132,45 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
     };
   }, [title, content, saveNote]);
 
+  // Flush the pending autosave immediately (used by Cmd/Ctrl+S).
+  const flushSave = useCallback(() => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    const titleChanged = title !== lastSaved.current.title;
+    const contentChanged = content !== lastSaved.current.content;
+    if (!titleChanged && !contentChanged) return;
+    const patch: NotePatch = {};
+    if (titleChanged) patch.title = title;
+    if (contentChanged) patch.content = content;
+    void saveNote(patch);
+  }, [title, content, saveNote]);
+
+  // Cmd/Ctrl+S forces an immediate save instead of waiting for the debounce.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        flushSave();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [flushSave]);
+
+  // Warn before leaving with unsaved or in-flight changes.
+  useEffect(() => {
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      const dirty =
+        title !== lastSaved.current.title ||
+        content !== lastSaved.current.content;
+      if (dirty || saveStatus === "saving") {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [title, content, saveStatus]);
+
   async function handleMove(folderId: string | null) {
     const formData = new FormData();
     formData.set("noteId", note.id);

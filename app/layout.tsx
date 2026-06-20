@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -21,6 +21,19 @@ export const metadata: Metadata = {
   },
   description:
     "A Notion-style notes app with markdown editing, organization, and AI assistance.",
+  applicationName: "Zenotion",
+  appleWebApp: {
+    capable: true,
+    title: "Zenotion",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f4f3f0" },
+    { media: "(prefers-color-scheme: dark)", color: "#191919" },
+  ],
 };
 
 export default function RootLayout({

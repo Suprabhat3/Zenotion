@@ -1,11 +1,18 @@
 import Link from "next/link";
-import { FileText, Globe, Star } from "lucide-react";
+import { FileText, Globe, Plus, Star } from "lucide-react";
 import type { NoteSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { createNote } from "@/app/(app)/notes/actions";
+import { Button } from "@/components/ui/button";
 
 type NoteListProps = {
   notes: NoteSummary[];
+  emptyTitle?: string;
   emptyMessage?: string;
+  /** When set, the empty-state CTA creates the note inside this folder. */
+  createFolderId?: string | null;
+  /** Label for the empty-state CTA button. */
+  createLabel?: string;
 };
 
 function excerpt(content: string, max = 120): string {
@@ -21,14 +28,35 @@ function formatDate(date: Date): string {
   }).format(date);
 }
 
-export function NoteList({ notes, emptyMessage }: NoteListProps) {
+export function NoteList({
+  notes,
+  emptyTitle,
+  emptyMessage,
+  createFolderId,
+  createLabel = "Create your first note",
+}: NoteListProps) {
   if (notes.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/70 py-16 text-center clay-surface">
-        <FileText className="mb-3 h-10 w-10 text-muted-foreground" />
-        <p className="text-muted-foreground">
-          {emptyMessage ?? "No notes yet. Create your first note to get started."}
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/70 px-6 py-16 text-center clay-surface">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+          <FileText className="h-7 w-7 text-muted-foreground" />
+        </div>
+        <h3 className="text-base font-semibold">
+          {emptyTitle ?? "Nothing here yet"}
+        </h3>
+        <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+          {emptyMessage ??
+            "Your notes will show up here. Start writing and they'll be saved automatically."}
         </p>
+        <form action={createNote} className="mt-5">
+          {createFolderId && (
+            <input type="hidden" name="folderId" value={createFolderId} />
+          )}
+          <Button type="submit" className="gap-2">
+            <Plus className="h-4 w-4" />
+            {createLabel}
+          </Button>
+        </form>
       </div>
     );
   }

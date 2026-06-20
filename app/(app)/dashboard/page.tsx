@@ -53,11 +53,23 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     ? noteCountLabel(filteredNotes.length)
     : "All notes in your workspace";
 
-  const emptyMessage = activeFolder
-    ? `No notes in "${activeFolder.name}" yet. Create one or move an existing note here.`
+  const emptyTitle = activeFolder
+    ? `"${activeFolder.name}" is empty`
     : activeTag
-      ? `No notes tagged "${activeTag.name}" yet.`
-      : undefined;
+      ? `No notes tagged "${activeTag.name}"`
+      : "Welcome to your workspace";
+
+  const emptyMessage = activeFolder
+    ? "Create a note here, or move an existing note into this folder."
+    : activeTag
+      ? "Notes you tag with this label will appear here."
+      : "Your notes will show up here. Create your first one to get started — it autosaves as you write.";
+
+  const emptyCreateLabel = activeFolder
+    ? "Create a note here"
+    : activeTag
+      ? "New note"
+      : "Create your first note";
 
   // Notes are already ordered by updatedAt desc, so the head of the list is
   // the most recently edited work. Only worth a strip once there's enough to scan.
@@ -118,7 +130,13 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         </section>
       )}
 
-      <NoteList notes={filteredNotes} emptyMessage={emptyMessage} />
+      <NoteList
+        notes={filteredNotes}
+        emptyTitle={emptyTitle}
+        emptyMessage={emptyMessage}
+        createFolderId={activeFolder?.id ?? null}
+        createLabel={emptyCreateLabel}
+      />
     </div>
   );
 }
