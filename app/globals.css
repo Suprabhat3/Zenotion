@@ -267,6 +267,18 @@ body {
   }
 }
 
+@keyframes loading-dot-bounce {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .public-fade-up {
     animation: public-fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -373,6 +385,18 @@ body {
     animation: public-glow-pulse 2.8s ease-in-out infinite;
   }
 
+  .loading-dot {
+    animation: loading-dot-bounce 1.2s ease-in-out infinite;
+  }
+
+  .loading-dot-2 {
+    animation-delay: 0.16s;
+  }
+
+  .loading-dot-3 {
+    animation-delay: 0.32s;
+  }
+
   .public-hero-glow {
     position: relative;
   }
@@ -398,6 +422,7 @@ body {
   .public-fade-up,
   .ambient-float,
   .ambient-glow,
+  .loading-dot,
   .public-hero-glow::before {
     animation: none;
   }
