@@ -149,6 +149,140 @@ body {
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  padding: 0.75rem 1rem 0;
+}
+
+.site-header-bar {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  margin-inline: auto;
+  max-width: 72rem;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  padding: 0.5rem 0.75rem;
+  box-shadow:
+    var(--clay-outer),
+    var(--clay-highlight),
+    var(--clay-inset-top);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.dark .site-header-bar {
+  background: color-mix(in srgb, var(--card) 72%, transparent);
+  border-color: color-mix(in srgb, var(--border) 65%, transparent);
+}
+
+.site-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--muted) 40%, transparent);
+  padding: 0.125rem;
+}
+
+.site-nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  padding: 0.4375rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--muted-foreground);
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.site-nav-link:hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--muted) 55%, transparent);
+}
+
+.site-nav-link-active {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--muted) 70%, var(--card));
+  box-shadow: var(--clay-inset-shadow), var(--clay-inset-highlight);
+}
+
+.site-nav-link-cta {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: var(--clay-outer), var(--clay-inset-top);
+}
+
+.site-nav-link-cta:hover {
+  color: var(--primary-foreground);
+  opacity: 0.92;
+}
+
+.site-nav-menu-trigger {
+  border-radius: 9999px;
+}
+
+.site-mobile-nav-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  border: 0;
+  background: color-mix(in srgb, var(--background) 35%, transparent);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.site-mobile-nav {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 50;
+  display: flex;
+  min-width: 12rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  padding: 0.5rem;
+  box-shadow:
+    var(--clay-outer),
+    var(--clay-highlight),
+    var(--clay-inset-top);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.site-mobile-nav .site-nav-link {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 0.625rem 0.875rem;
+}
+
+@media (min-width: 640px) {
+  .site-header {
+    padding-inline: 1.5rem;
+  }
+
+  .site-header-bar {
+    padding: 0.625rem 1rem;
+    border-radius: 1.25rem;
+  }
+}
+
 .clay-sidebar-shell {
   --sidebar-width: 15rem;
   position: relative;
@@ -432,6 +566,129 @@ body {
     );
     opacity: 0.7;
     animation: public-glow-pulse 4s ease-in-out infinite;
+  }
+
+  .landing-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 9999px;
+    border: 1px solid color-mix(in srgb, var(--border) 80%, var(--foreground));
+    background: color-mix(in srgb, var(--card) 85%, var(--muted));
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: var(--muted-foreground);
+    box-shadow: var(--clay-outer), var(--clay-inset-top);
+  }
+
+  .landing-highlight {
+    background: linear-gradient(
+      120deg,
+      var(--foreground) 0%,
+      color-mix(in srgb, var(--foreground) 70%, var(--muted-foreground)) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .landing-editor-mock {
+    border: 1px solid color-mix(in srgb, var(--border) 90%, var(--foreground));
+    box-shadow:
+      var(--clay-outer),
+      var(--clay-highlight),
+      var(--clay-inset-top);
+  }
+
+  .landing-editor-source {
+    background: linear-gradient(
+      165deg,
+      #1a1b26 0%,
+      #16161e 55%,
+      #13131a 100%
+    );
+    color: #c0caf5;
+  }
+
+  .landing-md-h1 {
+    color: #7aa2f7;
+    font-weight: 600;
+  }
+
+  .landing-md-h2 {
+    color: #bb9af7;
+    font-weight: 600;
+  }
+
+  .landing-md-code {
+    color: #f7768e;
+  }
+
+  .landing-md-list {
+    color: #a9b1d6;
+  }
+
+  .landing-md-checkbox {
+    color: #e0af68;
+  }
+
+  .landing-editor-preview {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--card) 92%, #eff6ff) 0%,
+      var(--card) 100%
+    );
+  }
+
+  .landing-preview-h1 {
+    color: #1d4ed8;
+  }
+
+  .landing-preview-h2 {
+    color: #6d28d9;
+  }
+
+  .landing-preview-code {
+    background: color-mix(in srgb, #dbeafe 80%, var(--muted));
+    color: #be185d;
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+  }
+
+  .landing-preview-task {
+    color: color-mix(in srgb, var(--muted-foreground) 90%, #b45309);
+  }
+
+  .dark .landing-editor-preview {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--card) 88%, #1e3a5f) 0%,
+      var(--card) 100%
+    );
+  }
+
+  .dark .landing-preview-h1 {
+    color: #60a5fa;
+  }
+
+  .dark .landing-preview-h2 {
+    color: #a78bfa;
+  }
+
+  .dark .landing-preview-code {
+    background: color-mix(in srgb, #1e3a5f 50%, var(--muted));
+    color: #f472b6;
+  }
+
+  .dark .landing-preview-task {
+    color: color-mix(in srgb, var(--muted-foreground) 85%, #fbbf24);
+  }
+
+  .landing-value-strip {
+    border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    background: color-mix(in srgb, var(--muted) 35%, transparent);
   }
 }
 

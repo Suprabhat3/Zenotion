@@ -1,10 +1,8 @@
-import { BrandLogo } from "@/components/brand-logo";
+import { SiteHeaderClient } from "@/components/site-header-client";
+import { AppShell } from "@/components/app-shell";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { getSidebarData } from "@/lib/notes";
-import { AppShell } from "@/components/app-shell";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { UserMenu } from "@/components/user-menu";
 
 export default async function AppLayout({
   children,
@@ -18,16 +16,12 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-svh flex-col clay-page-bg">
-      <header className="clay-header flex items-center justify-between px-4 py-3 sm:px-6">
-        <BrandLogo href="/dashboard" />
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <UserMenu
-            name={user.name}
-            email={user.email}
-            image={user.image}
-          />
-        </div>
+      <header className="site-header">
+        <SiteHeaderClient
+          user={user}
+          showNavLinks={false}
+          logoHref="/dashboard"
+        />
       </header>
       <AppShell sidebar={sidebar}>{children}</AppShell>
     </div>

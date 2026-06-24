@@ -12,18 +12,23 @@ export function BrandLogo({ href = "/", className }: BrandLogoProps) {
     <Link
       href={href}
       className={cn(
-        "group flex items-center gap-2.5 text-lg font-semibold tracking-tight transition-opacity duration-200 hover:opacity-90",
+        "group relative z-10 flex items-center gap-2.5 text-base font-semibold tracking-tight sm:text-lg",
         className,
       )}
     >
-      <Image
-        src={logo}
-        alt="Zenotion Logo"
-        width={28}
-        height={28}
-        className="transition-transform duration-300 ease-out group-hover:scale-110 group-hover:-rotate-3"
-      />
-      Zenotion
+      <span className="clay-brand-mark overflow-hidden p-0.5 transition-transform duration-300 ease-out group-hover:scale-105 group-hover:-rotate-2">
+        <Image
+          src={logo}
+          alt=""
+          width={24}
+          height={24}
+          className="rounded-[calc(var(--radius)-4px)]"
+          aria-hidden
+        />
+      </span>
+      <span className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text transition-opacity duration-200 group-hover:opacity-90">
+        Zenotion
+      </span>
     </Link>
   );
 }
