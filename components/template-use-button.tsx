@@ -11,6 +11,7 @@ type TemplateUsButtonProps = {
   templateTitle: string;
   templateContent: string;
   isLoggedIn: boolean;
+  className?: string;
 };
 
 type CreatedNote = { id: string };
@@ -19,6 +20,7 @@ export function TemplateUseButton({
   templateTitle,
   templateContent,
   isLoggedIn,
+  className,
 }: TemplateUsButtonProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -58,7 +60,7 @@ export function TemplateUseButton({
       size="sm"
       onClick={handleClick}
       disabled={isPending}
-      className="gap-1.5"
+      className={className ?? "gap-1.5"}
     >
       {isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
       {isLoggedIn ? "Use this template" : "Use after signup"}
