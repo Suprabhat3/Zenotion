@@ -108,6 +108,24 @@ export const renameFolderSchema = z.object({
   name: z.string().trim().min(1, "Name is required.").max(100),
 });
 
+export const renameTagSchema = z.object({
+  tagId: z.string().cuid(),
+  name: z.string().trim().min(1, "Name is required.").max(50),
+});
+
+export const versionIdSchema = z.object({
+  versionId: z.string().cuid(),
+});
+
+/** Subset of AI actions suited for inline text selection. */
+export const INLINE_AI_ACTIONS = [
+  "rewrite",
+  "simplify",
+  "fix-grammar",
+] as const;
+
+export type InlineAiAction = (typeof INLINE_AI_ACTIONS)[number];
+
 /**
  * Validate `data` against `schema`, throwing a 400 `ApiError` with field
  * details on failure. Use inside route handlers and server actions.

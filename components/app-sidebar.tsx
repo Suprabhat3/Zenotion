@@ -20,6 +20,8 @@ import { Button } from "@/components/ui/button";
 import { createNote } from "@/app/(app)/notes/actions";
 import { CreateFolderDialog } from "@/components/create-folder-dialog";
 import { CreateTagDialog } from "@/components/create-tag-dialog";
+import { FolderActionsMenu } from "@/components/folder-actions-menu";
+import { TagActionsMenu } from "@/components/tag-actions-menu";
 import { openQuickSwitcher } from "@/components/quick-switcher";
 
 type AppSidebarProps = {
@@ -256,11 +258,11 @@ export function AppSidebar({
                 const isActive = isDashboard && activeFolderId === folder.id;
 
                 return (
-                  <li key={folder.id}>
+                  <li key={folder.id} className="group flex items-center gap-0.5">
                     <Link
                       href={`/dashboard?folder=${folder.id}`}
                       className={cn(
-                        "clay-nav-item flex items-center justify-between gap-2 px-2.5 py-2 text-sm",
+                        "clay-nav-item flex min-w-0 flex-1 items-center justify-between gap-2 px-2.5 py-2 text-sm",
                         isActive && "clay-nav-item-active",
                       )}
                     >
@@ -272,6 +274,11 @@ export function AppSidebar({
                         {folder.noteCount}
                       </span>
                     </Link>
+                    <FolderActionsMenu
+                      folderId={folder.id}
+                      folderName={folder.name}
+                      noteCount={folder.noteCount}
+                    />
                   </li>
                 );
               })}
@@ -313,11 +320,11 @@ export function AppSidebar({
                 const isActive = isDashboard && activeTagId === tag.id;
 
                 return (
-                  <li key={tag.id}>
+                  <li key={tag.id} className="group flex items-center gap-0.5">
                     <Link
                       href={`/dashboard?tag=${tag.id}`}
                       className={cn(
-                        "clay-nav-item flex items-center gap-2 px-2.5 py-2 text-sm",
+                        "clay-nav-item flex min-w-0 flex-1 items-center gap-2 px-2.5 py-2 text-sm",
                         isActive && "clay-nav-item-active",
                       )}
                     >
@@ -330,6 +337,7 @@ export function AppSidebar({
                       )}
                       <span className="truncate">{tag.name}</span>
                     </Link>
+                    <TagActionsMenu tagId={tag.id} tagName={tag.name} />
                   </li>
                 );
               })}

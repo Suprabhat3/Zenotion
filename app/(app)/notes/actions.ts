@@ -15,6 +15,7 @@ import {
   parseOrThrow,
   renameFolderSchema,
   renameNoteSchema,
+  renameTagSchema,
   tagIdSchema,
   tagSchema,
   toggleNoteFavoriteSchema,
@@ -270,6 +271,29 @@ export async function createTag(formData: FormData) {
       color: input.color ?? null,
       userId: user.id,
     },
+  });
+
+  revalidateApp();
+}
+
+export async function renameTag(formData: FormData) {
+  const user = await requireUser();
+  const input = parseOrThrow(renameTagSchema, {
+    tagId: formData.get("tagId"),
+    name: formData.get("name"),
+  });
+
+  const tag = await prisma.tag.findFirst({
+    where: { id: input.tagId, userId: user.id },
+    select: { id: true },
+  });
+  if (!tag) {
+    throw new Error("Tag not found.");
+  }
+
+  await prisma.tag.update({
+    where: { id: input.tagId },
+    data: { name: input.name },
   });
 
   revalidateApp();

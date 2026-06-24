@@ -15,7 +15,7 @@ import {
 import { toast } from "sonner";
 import type { AiAction } from "@/lib/validators";
 import type { ApiResponse } from "@/lib/api";
-import type { NoteDetail, TagSummary } from "@/lib/types";
+import type { NoteDetail, TagSummary, EditorSelection } from "@/lib/types";
 import {
   assignNoteTags,
   deleteNote,
@@ -24,6 +24,8 @@ import {
 } from "@/app/(app)/notes/actions";
 import { ShareDialog } from "@/components/share-dialog";
 import { AiCommandPalette } from "@/components/ai-command-palette";
+import { InlineAiToolbar } from "@/components/inline-ai-toolbar";
+import { NoteVersionHistory } from "@/components/note-version-history";
 import { CopyButton } from "@/components/copy-button";
 import {
   EditorModeToggle,
@@ -80,10 +82,17 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
   const [richKey, setRichKey] = useState(0);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSaved = useRef({ title: note.title, content: note.content });
+  const replaceSelectionRef = useRef<((text: string) => void) | null>(null);
+  const [editorSelection, setEditorSelection] = useState<EditorSelection | null>(
+    null,
+  );
+  const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
 
   function handleModeChange(mode: EditorMode) {
     setEditorMode(mode);
     localStorage.setItem(EDITOR_MODE_KEY, mode);
+    setEditorSelection(null);
+    setSelectionRect(null);
     if (mode === "rich") {
       setRichKey((k) => k + 1);
     }
@@ -255,6 +264,53 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
     }
   }
 
+  function handleSelectionChange(
+    selection: EditorSelection | null,
+    rect: DOMRect | null,
+  ) {
+    setEditorSelection(selection);
+    setSelectionRect(rect);
+  }
+
+  function handleDismissSelection() {
+    setEditorSelection(null);
+    setSelectionRect(null);
+  }
+
+  function handleInlineReplace(text: string) {
+    if (replaceSelectionRef.current) {
+      replaceSelectionRef.current(text);
+      return;
+    }
+    if (!editorSelection) return;
+    setContent(
+      (current) =>
+        current.slice(0, editorSelection.from) +
+        text +
+        current.slice(editorSelection.to),
+    );
+    if (editorMode === "rich") {
+      setRichKey((k) => k + 1);
+    }
+  }
+
+  function handleVersionRestore(restored: NoteDetail) {
+    setTitle(restored.title);
+    setContent(restored.content);
+    lastSaved.current = {
+      title: restored.title,
+      content: restored.content,
+    };
+    setSaveStatus("saved");
+    if (editorMode === "rich") {
+      setRichKey((k) => k + 1);
+    }
+  }
+
+  function handleRetrySave() {
+    flushSave();
+  }
+
   const statusLabel: Record<SaveStatus, string> = {
     idle: "",
     saving: "Saving…",
@@ -300,8 +356,19 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
               {saveStatus === "saved" && <Check className="h-3 w-3" />}
               {saveStatus === "error" && <TriangleAlert className="h-3 w-3" />}
               {statusLabel[saveStatus]}
+              {saveStatus === "error" && (
+                <button
+                  type="button"
+                  onClick={handleRetrySave}
+                  className="ml-1 underline underline-offset-2 hover:no-underline"
+                >
+                  Retry
+                </button>
+              )}
             </span>
           )}
+
+          <NoteVersionHistory noteId={note.id} onRestore={handleVersionRestore} />
 
           <Button
             variant="ghost"
@@ -385,6 +452,13 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
       </div>
 
       {/* Editor body */}
+      <InlineAiToolbar
+        selection={editorSelection}
+        anchorRect={selectionRect}
+        onReplaceSelection={handleInlineReplace}
+        onDismiss={handleDismissSelection}
+      />
+
       {editorMode === "rich" ? (
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="mx-auto max-w-3xl px-4 py-2 sm:px-8">
@@ -392,6 +466,8 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
               key={`rich-${note.id}-${richKey}`}
               content={content}
               onChange={setContent}
+              onSelectionChange={handleSelectionChange}
+              replaceSelectionRef={replaceSelectionRef}
             />
           </div>
         </div>
@@ -404,7 +480,12 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
               </span>
             </div>
             <div className="min-h-0 flex-1 overflow-hidden bg-background">
-              <MarkdownCodeEditor value={content} onChange={setContent} />
+              <MarkdownCodeEditor
+                value={content}
+                onChange={setContent}
+                onSelectionChange={handleSelectionChange}
+                replaceSelectionRef={replaceSelectionRef}
+              />
             </div>
           </div>
           <div className="editor-pane flex min-h-0 flex-col">

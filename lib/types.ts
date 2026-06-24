@@ -54,3 +54,16 @@ export type NoteSearchResult = {
   folderName: string | null;
   updatedAt: string;
 };
+
+export type NoteVersionSummary = {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+};
+
+export type EditorSelection = {
+  from: number;
+  to: number;
+  text: string;
+};

@@ -131,12 +131,26 @@ model Note {
   folderId String?
   folder   Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
-  tags NoteTag[]
+  tags      NoteTag[]
+  versions  NoteVersion[]
 
   @@index([userId])
   @@index([folderId])
   @@index([shareSlug])
   @@map("note")
+}
+
+model NoteVersion {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+
+  noteId String
+  note   Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@index([noteId, createdAt])
+  @@map("note_version")
 }
 
 // Explicit join table so we can carry metadata later if needed.

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { createNoteVersionSnapshot } from "@/lib/note-versions";
 import { ApiError, ok, handleApiError } from "@/lib/api";
 import { requireUser } from "@/lib/session";
 import { parseOrThrow, updateNoteSchema } from "@/lib/validators";
@@ -51,6 +52,27 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const body: unknown = await request.json();
     const input = parseOrThrow(updateNoteSchema, body);
+
+    const existing = await prisma.note.findFirst({
+      where: { id, userId: user.id },
+      select: { title: true, content: true },
+    });
+    if (!existing) {
+      throw new ApiError("NOT_FOUND", "Note not found.");
+    }
+
+    const contentChanging =
+      input.content !== undefined && input.content !== existing.content;
+    const titleChanging =
+      input.title !== undefined && input.title !== existing.title;
+
+    if (contentChanging || titleChanging) {
+      await createNoteVersionSnapshot({
+        noteId: id,
+        title: existing.title,
+        content: existing.content,
+      });
+    }
 
     if (input.folderId) {
       const folder = await prisma.folder.findFirst({

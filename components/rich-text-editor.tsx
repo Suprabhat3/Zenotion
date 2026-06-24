@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -11,6 +12,7 @@ import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { Markdown } from "tiptap-markdown";
 import { common, createLowlight } from "lowlight";
 import { RichEditorToolbar } from "@/components/rich-editor-toolbar";
+import type { EditorSelection } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const lowlight = createLowlight(common);
@@ -27,12 +29,19 @@ type RichTextEditorProps = {
   content: string;
   onChange: (markdown: string) => void;
   className?: string;
+  onSelectionChange?: (
+    selection: EditorSelection | null,
+    rect: DOMRect | null,
+  ) => void;
+  replaceSelectionRef?: React.RefObject<((text: string) => void) | null>;
 };
 
 export function RichTextEditor({
   content,
   onChange,
   className,
+  onSelectionChange,
+  replaceSelectionRef,
 }: RichTextEditorProps) {
   const editor = useEditor({
     immediatelyRender: false,
@@ -67,7 +76,48 @@ export function RichTextEditor({
     onUpdate: ({ editor: ed }) => {
       onChange(getEditorMarkdown(ed));
     },
+    onSelectionUpdate: ({ editor: ed }) => {
+      if (!onSelectionChange) return;
+
+      const { from, to } = ed.state.selection;
+      if (from === to || !ed.view.hasFocus()) {
+        onSelectionChange(null, null);
+        return;
+      }
+
+      const text = ed.state.doc.textBetween(from, to, "\n");
+      if (!text.trim()) {
+        onSelectionChange(null, null);
+        return;
+      }
+
+      const start = ed.view.coordsAtPos(from);
+      const end = ed.view.coordsAtPos(to);
+      const rect = new DOMRect(
+        Math.min(start.left, end.left),
+        Math.min(start.top, end.top),
+        Math.abs(end.right - start.left),
+        Math.max(end.bottom - start.top, 20),
+      );
+      onSelectionChange({ from, to, text }, rect);
+    },
   });
+
+  useEffect(() => {
+    if (!replaceSelectionRef) return;
+
+    replaceSelectionRef.current = (text: string) => {
+      if (!editor) return;
+      const { from, to } = editor.state.selection;
+      if (from === to) return;
+      editor
+        .chain()
+        .focus()
+        .insertContentAt({ from, to }, text)
+        .run();
+      onChange(getEditorMarkdown(editor));
+    };
+  }, [editor, onChange, replaceSelectionRef]);
 
   if (!editor) return null;
 

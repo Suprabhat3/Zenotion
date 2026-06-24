@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { languages } from "@codemirror/language-data";
+import type { ViewUpdate } from "@codemirror/view";
 import { EditorView } from "@codemirror/view";
+import type { EditorSelection } from "@/lib/types";
 import { getCodeMirrorTheme } from "@/lib/codemirror-theme";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +15,11 @@ type MarkdownCodeEditorProps = {
   onChange: (value: string) => void;
   className?: string;
   placeholder?: string;
+  onSelectionChange?: (
+    selection: EditorSelection | null,
+    rect: DOMRect | null,
+  ) => void;
+  replaceSelectionRef?: React.RefObject<((text: string) => void) | null>;
 };
 
 function subscribeToDarkMode(onChange: () => void) {
@@ -32,16 +39,82 @@ function getDarkModeServerSnapshot() {
   return false;
 }
 
+function reportSelection(
+  view: EditorView,
+  onSelectionChange?: (
+    selection: EditorSelection | null,
+    rect: DOMRect | null,
+  ) => void,
+) {
+  if (!onSelectionChange) return;
+
+  const { from, to } = view.state.selection.main;
+  if (from === to || !view.hasFocus) {
+    onSelectionChange(null, null);
+    return;
+  }
+
+  const text = view.state.sliceDoc(from, to);
+  if (!text.trim()) {
+    onSelectionChange(null, null);
+    return;
+  }
+
+  const start = view.coordsAtPos(from);
+  const end = view.coordsAtPos(to);
+  if (!start || !end) {
+    onSelectionChange({ from, to, text }, null);
+    return;
+  }
+
+  const rect = new DOMRect(
+    Math.min(start.left, end.left),
+    Math.min(start.top, end.top),
+    Math.abs(end.right - start.left),
+    Math.max(end.bottom - start.top, 20),
+  );
+  onSelectionChange({ from, to, text }, rect);
+}
+
 export function MarkdownCodeEditor({
   value,
   onChange,
   className,
   placeholder = "Write markdown here…",
+  onSelectionChange,
+  replaceSelectionRef,
 }: MarkdownCodeEditorProps) {
   const isDark = useSyncExternalStore(
     subscribeToDarkMode,
     getDarkModeSnapshot,
     getDarkModeServerSnapshot,
+  );
+
+  const handleCreateEditor = useCallback(
+    (view: EditorView) => {
+      if (!replaceSelectionRef) return;
+
+      replaceSelectionRef.current = (text: string) => {
+        const { from, to } = view.state.selection.main;
+        if (from === to) return;
+        view.dispatch({
+          changes: { from, to, insert: text },
+          selection: { anchor: from + text.length },
+        });
+        onChange(view.state.doc.toString());
+      };
+    },
+    [onChange, replaceSelectionRef],
+  );
+
+  const handleUpdate = useCallback(
+    (update: ViewUpdate) => {
+      if (!onSelectionChange) return;
+      if (update.selectionSet || update.focusChanged) {
+        reportSelection(update.view, onSelectionChange);
+      }
+    },
+    [onSelectionChange],
   );
 
   const extensions = useMemo(
@@ -59,6 +132,8 @@ export function MarkdownCodeEditor({
         value={value}
         onChange={onChange}
         extensions={extensions}
+        onCreateEditor={handleCreateEditor}
+        onUpdate={handleUpdate}
         placeholder={placeholder}
         basicSetup={{
           lineNumbers: true,
