@@ -7,7 +7,6 @@ import {
   FileText,
   Folder,
   Hash,
-  LayoutDashboard,
   PanelLeft,
   PanelLeftClose,
   Plus,
@@ -44,7 +43,7 @@ function SidebarSection({ title, action, children, collapsed }: SidebarSectionPr
 
   return (
     <section className="space-y-2">
-      <div className="flex items-center justify-between px-1">
+      <div className="flex items-center justify-between gap-2 px-0.5">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           {title}
         </span>
@@ -95,6 +94,54 @@ function SidebarIconButton({
   );
 }
 
+const newNoteButtonClassName =
+  "w-full gap-2 clay-surface hover:bg-accent/80 hover:text-accent-foreground";
+
+function SidebarNoteLink({
+  noteId,
+  title,
+  isFavorite,
+  active,
+  collapsed,
+}: {
+  noteId: string;
+  title: string;
+  isFavorite: boolean;
+  active: boolean;
+  collapsed?: boolean;
+}) {
+  const label = title || "Untitled";
+
+  if (collapsed) {
+    return (
+      <SidebarIconButton href={`/notes/${noteId}`} label={label} active={active}>
+        {isFavorite ? (
+          <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+        ) : (
+          <FileText className="h-4 w-4 text-muted-foreground" />
+        )}
+      </SidebarIconButton>
+    );
+  }
+
+  return (
+    <Link
+      href={`/notes/${noteId}`}
+      className={cn(
+        "clay-nav-item flex items-center gap-2.5 px-3 py-2 text-sm",
+        active && "clay-nav-item-active",
+      )}
+    >
+      {isFavorite ? (
+        <Star className="h-4 w-4 shrink-0 fill-amber-400 text-amber-400" />
+      ) : (
+        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+      )}
+      <span className="truncate">{label}</span>
+    </Link>
+  );
+}
+
 export function AppSidebar({
   sidebar,
   collapsed,
@@ -105,29 +152,34 @@ export function AppSidebar({
   const activeFolderId = searchParams.get("folder");
   const activeTagId = searchParams.get("tag");
   const isDashboard = pathname === "/dashboard";
-  const isAllNotesActive = isDashboard && !activeFolderId && !activeTagId;
 
   return (
     <aside
       className={cn(
-        "flex h-full min-h-0 flex-col",
-        collapsed ? "w-14 p-2" : "w-60 p-4",
+        "clay-sidebar flex h-full min-h-0 flex-col",
+        collapsed ? "w-14 px-2 py-3" : "w-60 px-3 py-4",
       )}
     >
-      <div className={cn("flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto", collapsed && "items-center gap-3")}>
-        <form action={createNote} className={cn(collapsed ? "w-full" : "w-full")}>
+      <div
+        className={cn(
+          "flex min-h-0 flex-1 flex-col overflow-y-auto",
+          collapsed ? "items-center gap-3" : "gap-6",
+        )}
+      >
+        <form action={createNote} className="w-full">
           {collapsed ? (
             <Button
               type="submit"
+              variant="outline"
               size="icon"
-              className="mx-auto h-9 w-9"
+              className="mx-auto h-9 w-9 clay-surface"
               title="New note"
               aria-label="New note"
             >
               <Plus className="h-4 w-4" />
             </Button>
           ) : (
-            <Button type="submit" className="w-full gap-2">
+            <Button type="submit" variant="outline" className={newNoteButtonClassName}>
               <Plus className="h-4 w-4" />
               New note
             </Button>
@@ -136,93 +188,78 @@ export function AppSidebar({
 
         <SidebarSection title="Browse" action={null} collapsed={collapsed}>
           {collapsed ? (
-            <>
-              <button
-                type="button"
-                onClick={openQuickSwitcher}
-                title="Search notes"
-                aria-label="Search notes"
-                className="clay-nav-item flex h-9 w-9 items-center justify-center"
-              >
-                <Search className="h-4 w-4 text-muted-foreground" />
-              </button>
-              <SidebarIconButton
-                href="/dashboard"
-                label="All notes"
-                active={isAllNotesActive}
-              >
-                <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-              </SidebarIconButton>
-            </>
+            <button
+              type="button"
+              onClick={openQuickSwitcher}
+              title="Search notes"
+              aria-label="Search notes"
+              className="clay-nav-item flex h-9 w-9 items-center justify-center"
+            >
+              <Search className="h-4 w-4 text-muted-foreground" />
+            </button>
           ) : (
-            <>
-              <button
-                type="button"
-                onClick={openQuickSwitcher}
-                className="clay-nav-item flex w-full items-center justify-between gap-2 px-2.5 py-2 text-sm"
-              >
-                <span className="flex items-center gap-2">
-                  <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  Search
-                </span>
-                <kbd className="rounded border bg-muted px-1.5 text-[10px] text-muted-foreground">
-                  Ctrl P
-                </kbd>
-              </button>
-              <Link
-                href="/dashboard"
-                className={cn(
-                  "clay-nav-item flex items-center justify-between gap-2 px-2.5 py-2 text-sm",
-                  isAllNotesActive && "clay-nav-item-active",
-                )}
-              >
-                <span className="flex items-center gap-2">
-                  <LayoutDashboard className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  All notes
-                </span>
-                <span className="text-xs tabular-nums text-muted-foreground">
-                  {sidebar.totalNotes}
-                </span>
-              </Link>
-            </>
+            <button
+              type="button"
+              onClick={openQuickSwitcher}
+              className="clay-nav-item flex w-full items-center justify-between gap-2 px-3 py-2 text-sm"
+            >
+              <span className="flex items-center gap-2.5">
+                <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+                Search
+              </span>
+              <kbd className="rounded-md px-1.5 py-0.5 text-[10px] text-muted-foreground clay-inset">
+                Ctrl P
+              </kbd>
+            </button>
           )}
         </SidebarSection>
 
-        {sidebar.favorites.length > 0 && (
-          <SidebarSection title="Favorites" action={null} collapsed={collapsed}>
-            {collapsed ? (
-              <>
-                {sidebar.favorites.slice(0, 4).map((note) => (
-                  <SidebarIconButton
-                    key={note.id}
-                    href={`/notes/${note.id}`}
-                    label={note.title || "Untitled"}
-                    active={pathname === `/notes/${note.id}`}
-                  >
-                    <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                  </SidebarIconButton>
-                ))}
-              </>
-            ) : (
-              <ul className="space-y-0.5">
-                {sidebar.favorites.map((note) => (
-                  <li key={note.id}>
-                    <Link
-                      href={`/notes/${note.id}`}
-                      className={cn(
-                        "clay-nav-item flex items-center gap-2 px-2.5 py-2 text-sm",
-                        pathname === `/notes/${note.id}` && "clay-nav-item-active",
-                      )}
+        <SidebarSection
+          title="Notes"
+          action={
+            collapsed ? null : (
+              <span className="rounded-md px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground clay-inset">
+                {sidebar.notes.length}
+              </span>
+            )
+          }
+          collapsed={collapsed}
+        >
+          {sidebar.notes.length === 0 ? (
+            collapsed ? null : (
+              <SidebarEmptyHint
+                message="Notes you create will appear here for quick access."
+                action={
+                  <form action={createNote}>
+                    <Button
+                      type="submit"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 text-xs clay-surface"
                     >
-                      <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <span className="truncate">{note.title || "Untitled"}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </SidebarSection>
-        )}
+                      <Plus className="h-3.5 w-3.5" />
+                      New note
+                    </Button>
+                  </form>
+                }
+              />
+            )
+          ) : (
+            <ul className={cn("space-y-0.5", !collapsed && "max-h-64 overflow-y-auto pr-0.5")}>
+              {(collapsed ? sidebar.notes.slice(0, 6) : sidebar.notes).map((note) => (
+                <li key={note.id}>
+                  <SidebarNoteLink
+                    noteId={note.id}
+                    title={note.title}
+                    isFavorite={note.isFavorite}
+                    active={pathname === `/notes/${note.id}`}
+                    collapsed={collapsed}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </SidebarSection>
 
         <SidebarSection
           title="Folders"
@@ -231,7 +268,7 @@ export function AppSidebar({
         >
           {collapsed ? (
             <>
-              <CreateFolderDialog className="h-9 w-9" />
+              <CreateFolderDialog className="h-9 w-9 clay-surface" />
               {sidebar.folders.slice(0, 4).map((folder) => {
                 const isActive = isDashboard && activeFolderId === folder.id;
 
@@ -262,15 +299,15 @@ export function AppSidebar({
                     <Link
                       href={`/dashboard?folder=${folder.id}`}
                       className={cn(
-                        "clay-nav-item flex min-w-0 flex-1 items-center justify-between gap-2 px-2.5 py-2 text-sm",
+                        "clay-nav-item flex min-w-0 flex-1 items-center justify-between gap-2 px-3 py-2 text-sm",
                         isActive && "clay-nav-item-active",
                       )}
                     >
-                      <span className="flex min-w-0 items-center gap-2">
+                      <span className="flex min-w-0 items-center gap-2.5">
                         <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
                         <span className="truncate">{folder.name}</span>
                       </span>
-                      <span className="text-xs tabular-nums text-muted-foreground">
+                      <span className="rounded-md px-1.5 py-0.5 text-xs tabular-nums text-muted-foreground clay-inset">
                         {folder.noteCount}
                       </span>
                     </Link>
@@ -293,7 +330,7 @@ export function AppSidebar({
         >
           {collapsed ? (
             <>
-              <CreateTagDialog className="h-9 w-9" />
+              <CreateTagDialog className="h-9 w-9 clay-surface" />
               {sidebar.tags.slice(0, 4).map((tag) => {
                 const isActive = isDashboard && activeTagId === tag.id;
 
@@ -324,7 +361,7 @@ export function AppSidebar({
                     <Link
                       href={`/dashboard?tag=${tag.id}`}
                       className={cn(
-                        "clay-nav-item flex min-w-0 flex-1 items-center gap-2 px-2.5 py-2 text-sm",
+                        "clay-nav-item flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2 text-sm",
                         isActive && "clay-nav-item-active",
                       )}
                     >
@@ -348,15 +385,19 @@ export function AppSidebar({
 
       <div
         className={cn(
-          "mt-3 shrink-0 border-t border-border/60 pt-3",
-          collapsed ? "flex justify-center" : "",
+          "mt-4 shrink-0 px-1 pt-1",
+          collapsed ? "flex flex-col items-center" : "",
         )}
       >
+        <div className="clay-sidebar-separator mb-3" aria-hidden />
         <Button
           type="button"
           variant="ghost"
           size={collapsed ? "icon" : "sm"}
-          className={cn(!collapsed && "w-full justify-start gap-2 text-muted-foreground")}
+          className={cn(
+            "text-muted-foreground hover:text-foreground",
+            !collapsed && "w-full justify-start gap-2 px-2",
+          )}
           onClick={onToggleCollapsed}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}

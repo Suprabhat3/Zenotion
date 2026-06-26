@@ -290,12 +290,19 @@ body {
   flex-direction: column;
   flex-shrink: 0;
   width: var(--sidebar-width);
-  min-height: 100%;
+  min-height: 0;
   align-self: stretch;
+  margin: 0.75rem 0 0.75rem 0.75rem;
   overflow: hidden;
-  border-right: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
-  background: color-mix(in srgb, var(--card) 30%, var(--background));
-  box-shadow: inset -1px 0 0 color-mix(in srgb, var(--foreground) 4%, transparent);
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  box-shadow:
+    var(--clay-outer),
+    var(--clay-highlight),
+    var(--clay-inset-top);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   transition: width 0.22s ease;
 }
 
@@ -308,49 +315,62 @@ body {
 }
 
 .dark .clay-sidebar-shell {
-  background: color-mix(in srgb, var(--card) 18%, var(--background));
-  box-shadow: inset -1px 0 0 color-mix(in srgb, var(--foreground) 6%, transparent);
+  background: color-mix(in srgb, var(--card) 72%, transparent);
+  border-color: color-mix(in srgb, var(--border) 65%, transparent);
 }
 
 .clay-sidebar {
   background: transparent;
 }
 
+.clay-sidebar-separator {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in srgb, var(--border) 90%, transparent) 50%,
+    transparent
+  );
+}
+
 .clay-sidebar-section {
-  border-radius: calc(var(--radius) - 2px);
-  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
-  background: color-mix(in srgb, var(--card) 35%, transparent);
-  padding: 0.25rem;
-  min-height: 2.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
 }
 
 .clay-sidebar-empty {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 0.5rem;
-  text-align: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.625rem;
   font-size: 0.75rem;
-  line-height: 1.4;
+  line-height: 1.45;
   color: var(--muted-foreground);
 }
 
 .clay-nav-item {
-  border-radius: calc(var(--radius) - 2px);
-  transition: background-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+  border-radius: calc(var(--radius) + 2px);
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .clay-nav-item:hover {
-  background: color-mix(in srgb, var(--accent) 70%, transparent);
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
 }
 
 .clay-nav-item-active {
-  background: color-mix(in srgb, var(--card) 85%, var(--background));
+  background: color-mix(in srgb, var(--card) 90%, var(--background));
   box-shadow: var(--clay-inset-shadow), var(--clay-inset-highlight);
   font-weight: 500;
   color: var(--foreground);
+}
+
+.dark .clay-nav-item-active {
+  background: color-mix(in srgb, var(--card) 70%, var(--background));
 }
 
 .clay-brand-mark {

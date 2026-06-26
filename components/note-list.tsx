@@ -1,12 +1,16 @@
+"use client";
+
 import Link from "next/link";
 import { FileText, Globe, Plus, Star } from "lucide-react";
 import type { NoteSummary } from "@/lib/types";
+import type { NotesViewMode } from "@/components/note-view-toggle";
 import { cn } from "@/lib/utils";
 import { createNote } from "@/app/(app)/notes/actions";
 import { Button } from "@/components/ui/button";
 
 type NoteListProps = {
   notes: NoteSummary[];
+  view?: NotesViewMode;
   emptyTitle?: string;
   emptyMessage?: string;
   /** When set, the empty-state CTA creates the note inside this folder. */
@@ -20,16 +24,114 @@ function excerpt(content: string, max = 120): string {
   return line.length > max ? `${line.slice(0, max)}…` : line || "No content yet";
 }
 
-function formatDate(date: Date): string {
+function formatDate(date: Date | string): string {
   return new Intl.DateTimeFormat("en", {
     month: "short",
     day: "numeric",
     year: "numeric",
-  }).format(date);
+  }).format(new Date(date));
+}
+
+function NoteMeta({
+  note,
+  compact = false,
+}: {
+  note: NoteSummary;
+  compact?: boolean;
+}) {
+  return (
+    <>
+      <span className="text-xs text-muted-foreground">
+        {formatDate(note.updatedAt)}
+      </span>
+      {note.tags.length > 0 && (
+        <div className={cn("flex flex-wrap gap-1.5", compact && "hidden sm:flex")}>
+          {note.tags.map(({ tag }) => (
+            <span
+              key={tag.id}
+              className="rounded-full bg-secondary px-2 py-0.5 text-xs"
+            >
+              {tag.name}
+            </span>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+function NoteStatusIcons({ note }: { note: NoteSummary }) {
+  if (!note.isFavorite && !note.isPublic) return null;
+
+  return (
+    <span className="flex shrink-0 items-center gap-1.5">
+      {note.isFavorite && (
+        <Star className="h-4 w-4 fill-amber-400 text-amber-400" aria-label="Favorite" />
+      )}
+      {note.isPublic && (
+        <Globe className="h-4 w-4 text-muted-foreground" aria-label="Public" />
+      )}
+    </span>
+  );
+}
+
+function NoteGridCard({ note }: { note: NoteSummary }) {
+  return (
+    <Link
+      href={`/notes/${note.id}`}
+      className="clay-surface clay-lift-subtle flex h-full min-h-[148px] flex-col rounded-xl p-4 transition-transform hover:-translate-y-0.5"
+    >
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <h3 className="line-clamp-2 font-medium leading-snug">
+          {note.title || "Untitled"}
+        </h3>
+        <NoteStatusIcons note={note} />
+      </div>
+      <p className="mb-3 line-clamp-3 flex-1 text-sm leading-relaxed text-muted-foreground">
+        {excerpt(note.content)}
+      </p>
+      <div className="mt-auto flex flex-wrap items-center gap-2">
+        <NoteMeta note={note} />
+      </div>
+    </Link>
+  );
+}
+
+function NoteListRow({ note }: { note: NoteSummary }) {
+  return (
+    <Link
+      href={`/notes/${note.id}`}
+      className="clay-surface clay-lift-subtle flex items-center gap-3 rounded-xl p-3.5 transition-transform hover:-translate-y-0.5 sm:gap-4 sm:p-4"
+    >
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted/70">
+        <FileText className="h-4 w-4 text-muted-foreground" />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="truncate font-medium leading-snug">
+            {note.title || "Untitled"}
+          </h3>
+          <NoteStatusIcons note={note} />
+        </div>
+        <p className="mt-0.5 line-clamp-1 text-sm text-muted-foreground">
+          {excerpt(note.content, 160)}
+        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-2 sm:hidden">
+          <NoteMeta note={note} compact />
+        </div>
+      </div>
+
+      <div className="hidden shrink-0 flex-col items-end gap-2 sm:flex">
+        <NoteMeta note={note} />
+      </div>
+    </Link>
+  );
 }
 
 export function NoteList({
   notes,
+  view = "grid",
   emptyTitle,
   emptyMessage,
   createFolderId,
@@ -61,44 +163,23 @@ export function NoteList({
     );
   }
 
+  if (view === "list") {
+    return (
+      <ul className="flex flex-col gap-2">
+        {notes.map((note) => (
+          <li key={note.id}>
+            <NoteListRow note={note} />
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {notes.map((note) => (
-        <li key={note.id}>
-          <Link
-            href={`/notes/${note.id}`}
-            className={cn(
-              "block rounded-xl p-4 transition-all hover:-translate-y-0.5 clay-surface",
-            )}
-          >
-            <div className="mb-2 flex items-start justify-between gap-2">
-              <h3 className="font-medium leading-snug">{note.title}</h3>
-              <span className="flex shrink-0 items-center gap-1.5">
-                {note.isFavorite && (
-                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                )}
-                {note.isPublic && (
-                  <Globe className="h-4 w-4 text-muted-foreground" />
-                )}
-              </span>
-            </div>
-            <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
-              {excerpt(note.content)}
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-muted-foreground">
-                {formatDate(note.updatedAt)}
-              </span>
-              {note.tags.map(({ tag }) => (
-                <span
-                  key={tag.id}
-                  className="rounded-full bg-secondary px-2 py-0.5 text-xs"
-                >
-                  {tag.name}
-                </span>
-              ))}
-            </div>
-          </Link>
+        <li key={note.id} className="min-w-0">
+          <NoteGridCard note={note} />
         </li>
       ))}
     </ul>

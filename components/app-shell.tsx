@@ -64,7 +64,7 @@ export function AppShell({ sidebar, children }: AppShellProps) {
   const isCollapsed = hydrated && collapsed;
 
   return (
-    <div className="flex min-h-0 flex-1">
+    <div className="flex min-h-0 flex-1 gap-3 pr-3 pb-3">
       <div
         className={cn(
           "clay-sidebar-shell",

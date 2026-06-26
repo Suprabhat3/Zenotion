@@ -40,7 +40,7 @@ export async function getUserNote(
 }
 
 export async function getSidebarData(userId: string): Promise<SidebarData> {
-  const [folders, tags, totalNotes, favorites] = await Promise.all([
+  const [folders, tags, notes] = await Promise.all([
     prisma.folder.findMany({
       where: { userId },
       orderBy: { name: "asc" },
@@ -55,18 +55,15 @@ export async function getSidebarData(userId: string): Promise<SidebarData> {
       orderBy: { name: "asc" },
       select: { id: true, name: true, color: true },
     }),
-    prisma.note.count({ where: { userId } }),
     prisma.note.findMany({
-      where: { userId, isFavorite: true },
-      orderBy: { updatedAt: "desc" },
-      take: 10,
-      select: { id: true, title: true },
+      where: { userId },
+      orderBy: [{ isFavorite: "desc" }, { updatedAt: "desc" }],
+      select: { id: true, title: true, isFavorite: true },
     }),
   ]);
 
   return {
-    totalNotes,
-    favorites,
+    notes,
     folders: folders.map((f) => ({
       id: f.id,
       name: f.name,

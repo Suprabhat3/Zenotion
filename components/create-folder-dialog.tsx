@@ -52,7 +52,11 @@ export function CreateFolderDialog({
             <span className="sr-only">New folder</span>
           </Button>
         ) : (
-          <Button variant="ghost" size="sm" className={cn("h-7 text-xs", className)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn("h-8 gap-1.5 text-xs clay-surface", className)}
+          >
             <Plus className="h-3.5 w-3.5" />
             Add folder
           </Button>

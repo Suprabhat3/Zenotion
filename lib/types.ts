@@ -33,14 +33,14 @@ export type NoteDetail = NoteSummary & {
   createdAt: Date;
 };
 
-export type FavoriteNoteSummary = {
+export type SidebarNoteSummary = {
   id: string;
   title: string;
+  isFavorite: boolean;
 };
 
 export type SidebarData = {
-  totalNotes: number;
-  favorites: FavoriteNoteSummary[];
+  notes: SidebarNoteSummary[];
   folders: FolderSummary[];
   tags: TagSummary[];
 };
