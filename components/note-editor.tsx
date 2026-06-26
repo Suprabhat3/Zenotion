@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import type { Editor } from "@tiptap/react";
 import {
@@ -90,6 +91,11 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
   );
   const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
   const [richEditor, setRichEditor] = useState<Editor | null>(null);
+  const [printPortalReady, setPrintPortalReady] = useState(false);
+
+  useEffect(() => {
+    setPrintPortalReady(true);
+  }, []);
 
   const handleRichEditorReady = useCallback((editor: Editor) => {
     setRichEditor(editor);
@@ -331,7 +337,26 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
 
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
 
+  const printSurface = (
+    <div id="note-print-area" className="hidden print:block" aria-hidden>
+      <article className="note-print-document">
+        <header className="note-print-header">
+          <p className="note-print-brand">Zenotion</p>
+          <h1 className="note-print-title">{title.trim() || "Untitled"}</h1>
+          <p className="note-print-meta">
+            Exported{" "}
+            {new Intl.DateTimeFormat(undefined, { dateStyle: "long" }).format(
+              new Date(),
+            )}
+          </p>
+        </header>
+        <MarkdownPreview content={content} forPrint className="note-print-body" />
+      </article>
+    </div>
+  );
+
   return (
+    <>
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="note-editor-panel grid min-h-0 flex-1 grid-rows-[auto_1fr] overflow-hidden">
         <div className="note-editor-header min-h-0 shrink-0">
@@ -530,23 +555,8 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
         </div>
       </div>
 
-      {/* Print-only surface. Hidden on screen; isolated by @media print CSS so
-          "Print / Save as PDF" produces a clean, rendered document. */}
-      <div id="note-print-area" className="hidden print:block" aria-hidden>
-        <article className="note-print-document">
-          <header className="note-print-header">
-            <p className="note-print-brand">Zenotion</p>
-            <h1 className="note-print-title">{title.trim() || "Untitled"}</h1>
-            <p className="note-print-meta">
-              Exported{" "}
-              {new Intl.DateTimeFormat(undefined, { dateStyle: "long" }).format(
-                new Date(),
-              )}
-            </p>
-          </header>
-          <MarkdownPreview content={content} forPrint className="note-print-body" />
-        </article>
-      </div>
     </div>
+    {printPortalReady ? createPortal(printSurface, document.body) : null}
+    </>
   );
 }

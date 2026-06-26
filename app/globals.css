@@ -1014,10 +1014,10 @@ body {
   background-color: var(--accent) !important;
 }
 
-/* Print / "Save as PDF": hide app chrome and render a clean document. */
+/* Print / "Save as PDF": portaled #note-print-area is the only body child shown. */
 @media print {
   @page {
-    margin: 1.8cm 2cm;
+    margin: 1.5cm 2cm;
     size: A4;
   }
 
@@ -1025,28 +1025,36 @@ body {
   body {
     background: #fff !important;
     color: #171717 !important;
+    margin: 0 !important;
+    padding: 0 !important;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
 
-  body * {
-    visibility: hidden;
-  }
-
-  #note-print-area,
-  #note-print-area * {
-    visibility: visible;
+  body > *:not(#note-print-area) {
+    display: none !important;
   }
 
   #note-print-area {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    padding: 0;
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
     color: #171717;
     font-family: var(--font-geist-sans), system-ui, sans-serif;
     font-size: 11pt;
     line-height: 1.65;
+  }
+
+  #note-print-area * {
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 
   .note-print-document {
