@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 
 type RichEditorToolbarProps = {
   editor: Editor;
+  className?: string;
 };
 
 type ToolItem = {
@@ -30,7 +31,7 @@ type ToolItem = {
   isActive?: () => boolean;
 };
 
-export function RichEditorToolbar({ editor }: RichEditorToolbarProps) {
+export function RichEditorToolbar({ editor, className }: RichEditorToolbarProps) {
   const tools: ToolItem[] = [
     {
       icon: Bold,
@@ -122,7 +123,12 @@ export function RichEditorToolbar({ editor }: RichEditorToolbarProps) {
   ];
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/30 px-2 py-1.5">
+    <div
+      className={cn(
+        "rich-editor-toolbar flex shrink-0 flex-wrap items-center gap-0.5 px-2 py-1.5 sm:px-3",
+        className,
+      )}
+    >
       {tools.map(({ icon: Icon, label, action, isActive }) => (
         <Button
           key={label}

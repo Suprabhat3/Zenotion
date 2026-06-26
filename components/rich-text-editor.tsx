@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
@@ -29,6 +29,9 @@ type RichTextEditorProps = {
   content: string;
   onChange: (markdown: string) => void;
   className?: string;
+  /** When true, the parent renders the formatting toolbar (e.g. fixed above the scroll area). */
+  hideToolbar?: boolean;
+  onEditorReady?: (editor: Editor) => void;
   onSelectionChange?: (
     selection: EditorSelection | null,
     rect: DOMRect | null,
@@ -40,6 +43,8 @@ export function RichTextEditor({
   content,
   onChange,
   className,
+  hideToolbar = false,
+  onEditorReady,
   onSelectionChange,
   replaceSelectionRef,
 }: RichTextEditorProps) {
@@ -70,7 +75,7 @@ export function RichTextEditor({
     content,
     editorProps: {
       attributes: {
-        class: "rich-editor-content outline-none min-h-[60vh] px-2 py-4",
+        class: "rich-editor-content outline-none px-2 py-4",
       },
     },
     onUpdate: ({ editor: ed }) => {
@@ -104,6 +109,11 @@ export function RichTextEditor({
   });
 
   useEffect(() => {
+    if (!editor || !onEditorReady) return;
+    onEditorReady(editor);
+  }, [editor, onEditorReady]);
+
+  useEffect(() => {
     if (!replaceSelectionRef) return;
 
     replaceSelectionRef.current = (text: string) => {
@@ -121,11 +131,20 @@ export function RichTextEditor({
 
   if (!editor) return null;
 
+  if (hideToolbar) {
+    return (
+      <EditorContent
+        editor={editor}
+        className={cn("rich-editor-document", className)}
+      />
+    );
+  }
+
   return (
-    <div className={cn("flex h-full flex-col", className)}>
+    <div className={cn("flex min-h-0 flex-1 flex-col overflow-hidden", className)}>
       <RichEditorToolbar editor={editor} />
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <EditorContent editor={editor} className="h-full" />
+      <div className="note-editor-body min-h-0 flex-1">
+        <EditorContent editor={editor} className="rich-editor-document" />
       </div>
     </div>
   );

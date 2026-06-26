@@ -30,7 +30,7 @@ export default async function NotePage({ params }: PageProps) {
   if (!note) notFound();
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <NoteEditor
         note={note}
         folders={sidebar.folders.map((f) => ({ id: f.id, name: f.name }))}

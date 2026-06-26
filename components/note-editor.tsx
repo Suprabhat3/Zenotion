@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { Editor } from "@tiptap/react";
 import {
   Check,
   Download,
@@ -33,6 +34,7 @@ import {
 } from "@/components/editor-mode-toggle";
 import { MarkdownCodeEditor } from "@/components/markdown-code-editor";
 import { MarkdownPreview } from "@/components/markdown-preview";
+import { RichEditorToolbar } from "@/components/rich-editor-toolbar";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { Button } from "@/components/ui/button";
 import {
@@ -87,6 +89,15 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
     null,
   );
   const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
+  const [richEditor, setRichEditor] = useState<Editor | null>(null);
+
+  const handleRichEditorReady = useCallback((editor: Editor) => {
+    setRichEditor(editor);
+  }, []);
+
+  useEffect(() => {
+    setRichEditor(null);
+  }, [editorMode, richKey, note.id]);
 
   function handleModeChange(mode: EditorMode) {
     setEditorMode(mode);
@@ -321,22 +332,24 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-background">
-      {/* Title bar */}
-      <div className="border-b px-4 py-4 sm:px-6">
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full bg-transparent text-2xl font-semibold tracking-tight outline-none placeholder:text-muted-foreground sm:text-3xl"
-          placeholder="Untitled"
-        />
-      </div>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="note-editor-panel grid min-h-0 flex-1 grid-rows-[auto_1fr] overflow-hidden">
+        <div className="note-editor-header min-h-0 shrink-0">
+        {/* Title */}
+        <div className="note-editor-title px-4 py-4 sm:px-6">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full bg-transparent text-2xl font-semibold tracking-tight outline-none placeholder:text-muted-foreground sm:text-3xl"
+            placeholder="Untitled"
+          />
+        </div>
 
-      {/* Toolbar */}
-      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b bg-background/95 px-4 py-2.5 backdrop-blur sm:px-6">
-        <EditorModeToggle mode={editorMode} onChange={handleModeChange} />
+        {/* Actions — stays visible; only the note body scrolls below */}
+        <div className="note-editor-toolbar z-10 flex shrink-0 flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
+          <EditorModeToggle mode={editorMode} onChange={handleModeChange} />
 
-        <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
           <span className="mr-1 hidden text-xs tabular-nums text-muted-foreground md:inline">
             {wordCount === 1 ? "1 word" : `${wordCount} words`}
           </span>
@@ -449,58 +462,73 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
-      </div>
-
-      {/* Editor body */}
-      <InlineAiToolbar
-        selection={editorSelection}
-        anchorRect={selectionRect}
-        onReplaceSelection={handleInlineReplace}
-        onDismiss={handleDismissSelection}
-      />
-
-      {editorMode === "rich" ? (
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-3xl px-4 py-2 sm:px-8">
-            <RichTextEditor
-              key={`rich-${note.id}-${richKey}`}
-              content={content}
-              onChange={setContent}
-              onSelectionChange={handleSelectionChange}
-              replaceSelectionRef={replaceSelectionRef}
-            />
-          </div>
         </div>
-      ) : (
-        <div className="editor-split grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-2">
-          <div className="editor-pane flex min-h-0 flex-col border-b lg:border-b-0 lg:border-r">
-            <div className="editor-pane-header flex items-center justify-between px-4 py-2.5">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Markdown
-              </span>
-            </div>
-            <div className="min-h-0 flex-1 overflow-hidden bg-background">
-              <MarkdownCodeEditor
-                value={content}
+        </div>
+
+        <div className="flex min-h-0 flex-col overflow-hidden">
+        <InlineAiToolbar
+          selection={editorSelection}
+          anchorRect={selectionRect}
+          onReplaceSelection={handleInlineReplace}
+          onDismiss={handleDismissSelection}
+        />
+
+        {editorMode === "rich" ? (
+          <div className="note-editor-body min-h-0 flex-1">
+            {richEditor && (
+              <div className="note-editor-format-bar px-2 sm:px-4">
+                <div className="mx-auto w-full max-w-3xl">
+                  <RichEditorToolbar
+                    editor={richEditor}
+                    className="border-b-0 bg-transparent"
+                  />
+                </div>
+              </div>
+            )}
+            <div className="mx-auto w-full max-w-3xl px-2 pb-8 pt-2 sm:px-4">
+              <RichTextEditor
+                key={`rich-${note.id}-${richKey}`}
+                content={content}
                 onChange={setContent}
+                hideToolbar
+                onEditorReady={handleRichEditorReady}
                 onSelectionChange={handleSelectionChange}
                 replaceSelectionRef={replaceSelectionRef}
               />
             </div>
           </div>
-          <div className="editor-pane flex min-h-0 flex-col">
-            <div className="editor-pane-header flex items-center justify-between px-4 py-2.5">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Preview
-              </span>
-              <CopyButton text={content} label="Copy all" />
+        ) : (
+          <div className="editor-split grid min-h-0 flex-1 grid-cols-1 overflow-hidden lg:grid-cols-2">
+            <div className="editor-pane flex min-h-0 flex-col overflow-hidden border-b lg:border-b-0 lg:border-r lg:border-border/50">
+              <div className="editor-pane-header flex shrink-0 items-center justify-between px-4 py-2.5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Markdown
+                </span>
+              </div>
+              <div className="min-h-0 flex-1 overflow-hidden bg-background">
+                <MarkdownCodeEditor
+                  value={content}
+                  onChange={setContent}
+                  onSelectionChange={handleSelectionChange}
+                  replaceSelectionRef={replaceSelectionRef}
+                />
+              </div>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto bg-muted/20 px-6 py-6 lg:px-10">
-              <MarkdownPreview content={content} />
+            <div className="editor-pane flex min-h-0 flex-col overflow-hidden">
+              <div className="editor-pane-header flex shrink-0 items-center justify-between px-4 py-2.5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Preview
+                </span>
+                <CopyButton text={content} label="Copy all" />
+              </div>
+              <div className="note-editor-body min-h-0 flex-1 bg-muted/20 px-6 py-6 lg:px-10">
+                <MarkdownPreview content={content} />
+              </div>
             </div>
           </div>
+        )}
         </div>
-      )}
+      </div>
 
       {/* Print-only surface. Hidden on screen; isolated by @media print CSS so
           "Print / Save as PDF" produces a clean, rendered document. */}
