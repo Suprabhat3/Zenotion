@@ -1014,30 +1014,246 @@ body {
   background-color: var(--accent) !important;
 }
 
-/* Print / "Save as PDF": hide the app chrome and show only the note content.
-   The visibility trick isolates #note-print-area regardless of DOM nesting. */
+/* Print / "Save as PDF": hide app chrome and render a clean document. */
 @media print {
+  @page {
+    margin: 1.8cm 2cm;
+    size: A4;
+  }
+
+  html,
   body {
     background: #fff !important;
+    color: #171717 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
+
   body * {
     visibility: hidden;
   }
+
   #note-print-area,
   #note-print-area * {
     visibility: visible;
   }
+
   #note-print-area {
     position: absolute;
     inset: 0;
     width: 100%;
-    padding: 1.5rem 0.5rem;
-    color: #111;
+    padding: 0;
+    color: #171717;
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    font-size: 11pt;
+    line-height: 1.65;
   }
-  /* Avoid awkward breaks inside code blocks, tables, and diagrams. */
-  #note-print-area pre,
-  #note-print-area table,
-  #note-print-area .mermaid-diagram {
-    break-inside: avoid;
+
+  .note-print-document {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .note-print-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid #e5e5e5;
+  }
+
+  .note-print-brand {
+    margin: 0 0 0.75rem;
+    font-size: 9pt;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #737373;
+  }
+
+  .note-print-title {
+    margin: 0;
+    font-size: 26pt;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    color: #0a0a0a;
+  }
+
+  .note-print-meta {
+    margin: 0.75rem 0 0;
+    font-size: 10pt;
+    color: #737373;
+  }
+
+  .note-print-body {
+    color: #171717;
+  }
+
+  /* Force light-theme prose regardless of app dark mode. */
+  #note-print-area .prose-note-print {
+    --foreground: #171717;
+    --muted-foreground: #525252;
+    --border: #e5e5e5;
+    --muted: #f5f5f5;
+    --card: #ffffff;
+    --accent: #f5f5f5;
+    color: #171717;
+  }
+
+  #note-print-area .prose-note-print h1 {
+    font-size: 20pt;
+    margin: 1.75rem 0 0.5rem;
+    page-break-after: avoid;
+  }
+
+  #note-print-area .prose-note-print h2 {
+    font-size: 16pt;
+    margin: 1.5rem 0 0.45rem;
+    page-break-after: avoid;
+  }
+
+  #note-print-area .prose-note-print h3 {
+    font-size: 13pt;
+    margin: 1.25rem 0 0.35rem;
+    page-break-after: avoid;
+  }
+
+  #note-print-area .prose-note-print p,
+  #note-print-area .prose-note-print li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  #note-print-area .prose-note-print a,
+  #note-print-area .prose-note-print .markdown-link {
+    color: #1d4ed8 !important;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  #note-print-area .print-link-url {
+    font-size: 9pt;
+    color: #525252 !important;
+    text-decoration: none !important;
+    word-break: break-all;
+  }
+
+  #note-print-area .prose-note-print blockquote {
+    border-left-color: #d4d4d4;
+    color: #525252;
+    background: #fafafa;
+    padding: 0.5rem 0 0.5rem 1rem;
+    border-radius: 0 0.25rem 0.25rem 0;
+  }
+
+  #note-print-area .prose-note-print .markdown-inline-code,
+  #note-print-area .prose-note-print code:not(.hljs) {
+    background: #f5f5f5;
+    color: #c2410c;
+    border-color: #e5e5e5;
+  }
+
+  #note-print-area .prose-note-print .markdown-table-wrap {
+    border-color: #d4d4d4;
+    box-shadow: none;
+    background: #fff;
+  }
+
+  #note-print-area .prose-note-print .markdown-table-head {
+    background: #f5f5f5;
+  }
+
+  #note-print-area .prose-note-print .markdown-table-th,
+  #note-print-area .prose-note-print .markdown-table-td {
+    border-color: #e5e5e5;
+    color: #171717;
+  }
+
+  #note-print-area .prose-note-print .markdown-table-body .markdown-table-row:hover {
+    background: transparent;
+  }
+
+  #note-print-area .prose-note-print .markdown-image {
+    max-width: 100%;
+    border-color: #e5e5e5;
+    box-shadow: none;
+  }
+
+  #note-print-area .prose-note-print .mermaid-diagram {
+    border-color: #d4d4d4;
+    background: #fff;
+    page-break-inside: avoid;
+  }
+
+  #note-print-area .prose-note-print button {
+    display: none !important;
+  }
+
+  /* GitHub-light syntax colors for print code blocks. */
+  #note-print-area .hljs {
+    color: #24292e;
+    background: transparent;
+  }
+
+  #note-print-area .hljs-doctag,
+  #note-print-area .hljs-keyword,
+  #note-print-area .hljs-meta .hljs-keyword,
+  #note-print-area .hljs-template-tag,
+  #note-print-area .hljs-template-variable,
+  #note-print-area .hljs-type,
+  #note-print-area .hljs-variable.language_ {
+    color: #d73a49;
+  }
+
+  #note-print-area .hljs-title,
+  #note-print-area .hljs-title.class_,
+  #note-print-area .hljs-title.class_.inherited__,
+  #note-print-area .hljs-title.function_ {
+    color: #6f42c1;
+  }
+
+  #note-print-area .hljs-attr,
+  #note-print-area .hljs-attribute,
+  #note-print-area .hljs-literal,
+  #note-print-area .hljs-meta,
+  #note-print-area .hljs-number,
+  #note-print-area .hljs-operator,
+  #note-print-area .hljs-selector-attr,
+  #note-print-area .hljs-selector-class,
+  #note-print-area .hljs-selector-id,
+  #note-print-area .hljs-variable {
+    color: #005cc5;
+  }
+
+  #note-print-area .hljs-meta .hljs-string,
+  #note-print-area .hljs-regexp,
+  #note-print-area .hljs-string {
+    color: #032f62;
+  }
+
+  #note-print-area .hljs-built_in,
+  #note-print-area .hljs-symbol {
+    color: #e36209;
+  }
+
+  #note-print-area .hljs-code,
+  #note-print-area .hljs-comment,
+  #note-print-area .hljs-formula {
+    color: #6a737d;
+  }
+
+  #note-print-area .hljs-name,
+  #note-print-area .hljs-quote,
+  #note-print-area .hljs-selector-pseudo,
+  #note-print-area .hljs-selector-tag {
+    color: #22863a;
+  }
+
+  #note-print-area .print-code-block,
+  #note-print-area pre {
+    page-break-inside: avoid;
+  }
+
+  #note-print-area table {
+    page-break-inside: avoid;
   }
 }

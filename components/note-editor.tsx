@@ -533,8 +533,19 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
       {/* Print-only surface. Hidden on screen; isolated by @media print CSS so
           "Print / Save as PDF" produces a clean, rendered document. */}
       <div id="note-print-area" className="hidden print:block" aria-hidden>
-        <h1 className="mb-4 text-3xl font-bold">{title || "Untitled"}</h1>
-        <MarkdownPreview content={content} />
+        <article className="note-print-document">
+          <header className="note-print-header">
+            <p className="note-print-brand">Zenotion</p>
+            <h1 className="note-print-title">{title.trim() || "Untitled"}</h1>
+            <p className="note-print-meta">
+              Exported{" "}
+              {new Intl.DateTimeFormat(undefined, { dateStyle: "long" }).format(
+                new Date(),
+              )}
+            </p>
+          </header>
+          <MarkdownPreview content={content} forPrint className="note-print-body" />
+        </article>
       </div>
     </div>
   );

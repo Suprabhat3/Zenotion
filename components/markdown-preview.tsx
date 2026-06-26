@@ -1,6 +1,6 @@
 "use client";
 
-import { isValidElement, type ReactNode } from "react";
+import { isValidElement, useMemo, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
@@ -14,6 +14,8 @@ type MarkdownPreviewProps = {
   content: string;
   className?: string;
   showCopyAll?: boolean;
+  /** Light, copy-free rendering for browser print / Save as PDF. */
+  forPrint?: boolean;
 };
 
 function extractText(children: ReactNode): string {
@@ -28,16 +30,40 @@ function extractText(children: ReactNode): string {
 function CodeBlock({
   className,
   children,
+  forPrint = false,
 }: {
   className?: string;
   children?: ReactNode;
+  forPrint?: boolean;
 }) {
   const langMatch = /language-([\w-]+)/.exec(className ?? "");
   const language = langMatch?.[1] ?? "text";
   const code = extractText(children).replace(/\n$/, "");
 
   if (language === "mermaid") {
-    return <MermaidDiagram chart={code} />;
+    return <MermaidDiagram chart={code} forceLightTheme={forPrint} />;
+  }
+
+  if (forPrint) {
+    return (
+      <div className="print-code-block not-prose my-4 overflow-hidden rounded-md border border-[#d0d7de] bg-[#f6f8fa]">
+        <div className="flex items-center border-b border-[#d0d7de] bg-[#eef1f4] px-3 py-1.5">
+          <span className="font-mono text-[11px] font-medium uppercase tracking-wide text-[#57606a]">
+            {language}
+          </span>
+        </div>
+        <pre className="m-0! rounded-none! border-0! bg-transparent! p-0!">
+          <code
+            className={cn(
+              "hljs block overflow-x-auto px-4 py-3 text-[13px] leading-relaxed",
+              className,
+            )}
+          >
+            {children}
+          </code>
+        </pre>
+      </div>
+    );
   }
 
   return (
@@ -62,7 +88,8 @@ function CodeBlock({
   );
 }
 
-const markdownComponents: Components = {
+function createMarkdownComponents(forPrint: boolean): Components {
+  return {
   table({ children }) {
     return (
       <div className="markdown-table-wrap">
@@ -114,7 +141,11 @@ const markdownComponents: Components = {
       );
     }
 
-    return <CodeBlock className={className}>{children}</CodeBlock>;
+    return (
+      <CodeBlock className={className} forPrint={forPrint}>
+        {children}
+      </CodeBlock>
+    );
   },
   pre({ children }) {
     return <>{children}</>;
@@ -128,6 +159,9 @@ const markdownComponents: Components = {
         className="markdown-link"
       >
         {children}
+        {forPrint && href ? (
+          <span className="print-link-url"> ({href})</span>
+        ) : null}
       </a>
     );
   },
@@ -138,14 +172,21 @@ const markdownComponents: Components = {
     );
   },
 };
+}
 
 export function MarkdownPreview({
   content,
   className,
   showCopyAll = false,
+  forPrint = false,
 }: MarkdownPreviewProps) {
+  const markdownComponents = useMemo(
+    () => createMarkdownComponents(forPrint),
+    [forPrint],
+  );
+
   return (
-    <div className={cn("prose-note", className)}>
+    <div className={cn("prose-note", forPrint && "prose-note-print", className)}>
       {showCopyAll && content.trim() ? (
         <div className="mb-5 flex justify-end">
           <CopyButton text={content} label="Copy all" />
@@ -163,7 +204,9 @@ export function MarkdownPreview({
           {content}
         </ReactMarkdown>
       ) : (
-        <p className="text-muted-foreground italic">Nothing to preview yet.</p>
+        <p className={forPrint ? "text-[#737373]" : "text-muted-foreground italic"}>
+          Nothing to preview yet.
+        </p>
       )}
     </div>
   );

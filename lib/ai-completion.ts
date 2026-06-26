@@ -27,6 +27,40 @@ export class AiProviderError extends Error {
   }
 }
 
+function isOpenAiReasoningModel(model: string): boolean {
+  const normalized = model.toLowerCase();
+  return normalized.startsWith("gpt-5") || /^o[134]/.test(normalized);
+}
+
+function buildOpenAiCompatibleParams(
+  provider: AiProviderId,
+  input: CompletionInput,
+): OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming {
+  const reasoning = provider === "openai" && isOpenAiReasoningModel(input.model);
+  const tokenLimit = input.maxTokens ?? (reasoning ? 4096 : 2000);
+
+  if (provider === "openai") {
+    const params: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
+      model: input.model,
+      messages: input.messages,
+      max_completion_tokens: tokenLimit,
+    };
+
+    if (!reasoning) {
+      params.temperature = input.temperature ?? 0.4;
+    }
+
+    return params;
+  }
+
+  return {
+    model: input.model,
+    messages: input.messages,
+    temperature: input.temperature ?? 0.4,
+    max_tokens: tokenLimit,
+  };
+}
+
 async function readErrorMessage(response: Response): Promise<string> {
   try {
     const body: unknown = await response.json();
@@ -58,12 +92,9 @@ async function completeOpenAiCompatible(
   });
 
   try {
-    const completion = await client.chat.completions.create({
-      model: input.model,
-      messages: input.messages,
-      temperature: input.temperature ?? 0.4,
-      max_tokens: input.maxTokens ?? 2000,
-    });
+    const completion = await client.chat.completions.create(
+      buildOpenAiCompatibleParams(provider, input),
+    );
 
     const result = completion.choices[0]?.message?.content?.trim();
     if (!result) {

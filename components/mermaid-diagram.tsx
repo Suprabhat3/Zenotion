@@ -7,6 +7,8 @@ import { Loader2, TriangleAlert } from "lucide-react";
 type MermaidDiagramProps = {
   /** The raw mermaid diagram source (the contents of a ```mermaid block). */
   chart: string;
+  /** Use light styling regardless of app theme (browser print / PDF). */
+  forceLightTheme?: boolean;
 };
 
 type RenderState =
@@ -22,13 +24,18 @@ type RenderResult = { key: string; state: RenderState };
  * so it is dynamically imported on first render and kept out of the main bundle.
  * The diagram re-renders when the theme changes so it matches light/dark mode.
  */
-export function MermaidDiagram({ chart }: MermaidDiagramProps) {
+export function MermaidDiagram({ chart, forceLightTheme = false }: MermaidDiagramProps) {
   const { resolvedTheme } = useTheme();
   // mermaid.render needs a DOM-id-safe, unique string; useId() contains colons.
   const renderId = `mermaid-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   const source = chart.trim();
+  const themeKey = forceLightTheme
+    ? "light"
+    : resolvedTheme === "dark"
+      ? "dark"
+      : "light";
   // Identifies the exact (theme + source) a result belongs to.
-  const renderKey = `${resolvedTheme ?? "light"}::${source}`;
+  const renderKey = `${themeKey}::${source}`;
   const [result, setResult] = useState<RenderResult>({
     key: "",
     state: { status: "loading" },
@@ -46,7 +53,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
         mermaid.initialize({
           startOnLoad: false,
           securityLevel: "strict",
-          theme: resolvedTheme === "dark" ? "dark" : "default",
+          theme: forceLightTheme || resolvedTheme !== "dark" ? "default" : "dark",
           fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
         });
 
@@ -68,7 +75,7 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
     return () => {
       cancelled = true;
     };
-  }, [source, renderKey, renderId, resolvedTheme]);
+  }, [source, renderKey, renderId, resolvedTheme, forceLightTheme]);
 
   if (!source) {
     return null;
