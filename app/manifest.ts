@@ -1,14 +1,14 @@
 import type { MetadataRoute } from "next";
+import { siteConfig } from "@/lib/site";
 
 // Generates /manifest.webmanifest. Next.js auto-injects the <link rel="manifest">
 // tag into <head>, so no change to the root layout is needed. Icons are the
 // existing PNGs under /public.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Zenotion — AI Notes",
-    short_name: "Zenotion",
-    description:
-      "A Notion-style notes app with markdown editing, organization, and AI assistance.",
+    name: siteConfig.title,
+    short_name: siteConfig.name,
+    description: siteConfig.description,
     start_url: "/dashboard",
     scope: "/",
     display: "standalone",

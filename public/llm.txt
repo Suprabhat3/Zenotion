@@ -1,0 +1,145 @@
+# Zenotion
+
+> Markdown-first note management for developers. Organize specs, RFCs, and daily notes with folders, tags, autosave, public sharing, and bring-your-own-key AI assistance — free forever.
+
+Zenotion is a Notion-style notes web app built for developers who live in markdown. It is a calm workspace for meeting notes, API specs, RFCs, runbooks, daily logs, and side-project docs — without a block editor learning curve.
+
+Your markdown workspace for specs, RFCs, and daily notes — organized, autosaved, and always free.
+
+Site: https://zenotion.zenscail.com/
+Creator: Suprabhat (@suprabhat3)
+Portfolio: https://new.suprabhat.site
+
+## Always free — a gift from one developer to another
+
+Zenotion is free by nature — not a trial, not a freemium tier. The full platform is yours to use. No credit card, no paywalls, no surprise limits on the essentials.
+
+Built because every developer deserves a calm place for notes — without another subscription eating into side-project budgets.
+
+### The platform: 100% free, forever
+
+- Unlimited notes, folders, and tags
+- Markdown editor with live preview
+- Autosave and version history
+- Public share links
+
+### AI features: bring your own API key
+
+AI is optional — use notes without AI anytime.
+
+- Bring your own API key from any supported provider
+- Keys stay encrypted in your browser, never on our servers
+- Pay only your provider — Zenotion adds no markup
+
+Supported AI providers: OpenAI, Gemini, Anthropic, Groq, OpenRouter
+
+## Who it's for
+
+Developers, indie hackers, students, and teams who want a focused markdown notes app instead of a heavyweight workspace tool. Ideal for specs, RFCs, ADRs, PR write-ups, meeting notes, sprint planning, personal journals, and docs you want to share with a link.
+
+## Public pages
+
+- [Home](https://zenotion.zenscail.com/): Product overview, features, workflow, and sign-up entry point
+- [About](https://zenotion.zenscail.com/about): Mission, feature deep-dive, tech stack, and creator background
+- [Templates](https://zenotion.zenscail.com/templates): Starter templates gallery (ISR, revalidated hourly)
+- [Shared notes](https://zenotion.zenscail.com/share/[slug]): Public read-only notes when sharing is enabled by the author
+
+## Core features
+
+### Markdown + live preview
+
+Split-pane editor with sanitized GitHub Flavored Markdown (GFM) preview. Write the way you document code — README-style, predictable, and portable.
+
+### Folders & tags
+
+Group specs, sprints, and snippets. Tag by team, topic, or project and find anything in seconds. Mirror how you think about repos without friction.
+
+### Autosave & version history
+
+Every edit persists in the background. Roll back to earlier versions when you need to. Stop worrying about losing a draft mid-thought.
+
+### AI command palette
+
+Summarize, rewrite, outline, extract tasks, and more — one shortcut, bounded to your note. Works on full notes or selected text for inline actions.
+
+### Public share links
+
+Publish RFCs, runbooks, or docs with a URL when you are ready to ship. Private by default; public sharing is always an explicit opt-in.
+
+### Calm dev-friendly UI
+
+Light and dark themes, claymorphism-inspired surfaces, version history, keyboard-friendly flows, and a focused interface that stays out of your way.
+
+### Authentication
+
+Email/password sign-in and optional Google OAuth via Better Auth. Your notes are scoped to your account unless you choose to share them.
+
+## Typical workflow
+
+1. **Capture** — Drop meeting notes, API specs, or ideas in markdown. No block editor learning curve.
+2. **Organize** — Sort into folders and tag by team, sprint, or topic. Find anything in seconds.
+3. **Ship** — Keep notes private or share publicly. Your workflow, your rules.
+
+## Template gallery
+
+Starter templates to jump-start common note types:
+
+- **Meetings & collaboration** — Syncs, standups, retros, and 1-on-1s with decisions and action items
+- **Engineering & code** — PRs, RFCs, ADRs, bug reports, and postmortems with the right sections baked in
+- **Planning & product** — Briefs, specs, user stories, and roadmaps with scope and success metrics
+- **Personal & learning** — Journals, reviews, reading lists, and research docs
+
+Examples include meeting notes, standup updates, RFC drafts, ADRs, bug reports, product specs, weekly reviews, and more.
+
+## AI command palette actions
+
+Available inside the note editor for authenticated users with a configured API key:
+
+- **summarize** — Condense long notes into key points
+- **rewrite** — Clearer wording, same meaning
+- **continue** — Pick up where you left off
+- **fix-grammar** — Polish spelling and punctuation
+- **change-tone** — Adjust voice for your audience
+- **extract-tasks** — Turn prose into actionable checklists
+- **generate-title** — Name a note from its content
+- **create-outline** — Structure ideas before you expand
+- **simplify** — Make dense text easier to read
+- **translate** — Reach readers in another language
+- **flashcards** — Study material from your notes
+- **clean-markdown** — Fix messy pasted text into proper markdown
+
+Inline AI actions (on selected text): rewrite, simplify, fix-grammar, change-tone, translate.
+
+## Privacy & security
+
+- Notes are private by default and tied to your authenticated account
+- Public sharing requires an explicit toggle per note
+- AI API keys are stored encrypted in the browser — never sent to or stored on Zenotion servers
+- Markdown preview output is sanitized for safe rendering
+- AI requests are routed through a server endpoint; clients do not call providers directly
+
+## Tech stack
+
+Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, Prisma, PostgreSQL, Better Auth, OpenAI SDK (multi-provider), Zod validation.
+
+Rendering: SSR for authenticated dashboard and note editor; ISR for templates gallery; dynamic SSR for public shared notes.
+
+## Protected app areas
+
+These routes require sign-in and are not intended for indexing or automated crawling:
+
+- /dashboard — note list and workspace home
+- /notes/[id] — private markdown editor
+- /login — sign in
+- /signup — create account
+
+## API
+
+HTTP route handlers under /api/ are for authenticated app use (notes CRUD, AI completion, auth) and are not public documentation endpoints.
+
+## Optional
+
+- [Sitemap](https://zenotion.zenscail.com/sitemap.xml): Public page index
+- [Robots](https://zenotion.zenscail.com/robots.txt): Crawler rules
+- [Web app manifest](https://zenotion.zenscail.com/manifest.webmanifest): PWA metadata
+- [Open Graph image](https://zenotion.zenscail.com/og.webp): Social preview image
