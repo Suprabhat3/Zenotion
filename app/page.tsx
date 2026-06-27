@@ -150,7 +150,7 @@ export default async function HomePage() {
         <section className="public-hero-glow mx-auto max-w-6xl px-4 pb-12 pt-10 sm:px-6 sm:pb-16 sm:pt-20">
           <div className="relative z-10 flex flex-col items-center text-center">
             <p className="public-fade-up order-1 mb-3 max-w-xs text-[11px] font-medium uppercase leading-snug tracking-[0.14em] text-muted-foreground sm:mb-5 sm:max-w-none sm:text-sm sm:tracking-widest">
-              Built for developers who live in notes
+              Built for developers by a developer.
             </p>
 
             <h1 className="public-fade-up public-fade-up-delay-2 order-2 mx-auto mb-4 max-w-4xl text-[1.875rem] font-bold leading-[1.12] tracking-tight text-balance sm:order-3 sm:mb-5 sm:text-5xl lg:text-6xl">

@@ -338,7 +338,7 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
 
   const printSurface = (
-    <div id="note-print-area" className="hidden print:block" aria-hidden>
+    <div id="note-print-area" aria-hidden="true">
       <article className="note-print-document">
         <header className="note-print-header">
           <p className="note-print-brand">Zenotion</p>

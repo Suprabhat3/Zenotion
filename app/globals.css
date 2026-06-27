@@ -1014,21 +1014,29 @@ body {
   background-color: var(--accent) !important;
 }
 
+/* Hidden on screen; shown only when printing (see @media print below). */
+#note-print-area {
+  display: none !important;
+}
+
 /* Print / "Save as PDF": portaled #note-print-area is the only body child shown. */
 @media print {
   @page {
-    margin: 1.5cm 2cm;
+    margin: 0;
     size: A4;
   }
 
   html,
-  body {
+  html.dark,
+  body,
+  body.dark {
     background: #fff !important;
+    background-color: #fff !important;
     color: #171717 !important;
     margin: 0 !important;
     padding: 0 !important;
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
+    print-color-adjust: economy;
+    -webkit-print-color-adjust: economy;
   }
 
   body > *:not(#note-print-area) {
@@ -1038,10 +1046,13 @@ body {
   #note-print-area {
     display: block !important;
     position: static !important;
+    box-sizing: border-box !important;
     width: 100% !important;
+    min-height: 100vh !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 1.5cm 2cm !important;
     background: #fff !important;
+    background-color: #fff !important;
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
@@ -1049,12 +1060,29 @@ body {
     font-family: var(--font-geist-sans), system-ui, sans-serif;
     font-size: 11pt;
     line-height: 1.65;
+    print-color-adjust: economy;
+    -webkit-print-color-adjust: economy;
   }
 
   #note-print-area * {
     box-shadow: none !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+  }
+
+  #note-print-area .hljs,
+  #note-print-area pre,
+  #note-print-area pre code,
+  #note-print-area code.hljs {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+
+  #note-print-area .print-code-block {
+    background: #f6f8fa !important;
+    background-color: #f6f8fa !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 
   .note-print-document {
