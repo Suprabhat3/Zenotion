@@ -27,6 +27,8 @@ type AppSidebarProps = {
   sidebar: SidebarData;
   collapsed: boolean;
   onToggleCollapsed: () => void;
+  isMobile?: boolean;
+  onMobileClose?: () => void;
 };
 
 type SidebarSectionProps = {
@@ -72,11 +74,13 @@ function SidebarIconButton({
   href,
   label,
   active,
+  onNavigate,
   children,
 }: {
   href: string;
   label: string;
   active?: boolean;
+  onNavigate?: () => void;
   children: ReactNode;
 }) {
   return (
@@ -84,8 +88,9 @@ function SidebarIconButton({
       href={href}
       title={label}
       aria-label={label}
+      onClick={onNavigate}
       className={cn(
-        "clay-nav-item flex h-9 w-9 items-center justify-center",
+        "clay-nav-item flex h-9 w-9 shrink-0 items-center justify-center",
         active && "clay-nav-item-active",
       )}
     >
@@ -103,18 +108,25 @@ function SidebarNoteLink({
   isFavorite,
   active,
   collapsed,
+  onNavigate,
 }: {
   noteId: string;
   title: string;
   isFavorite: boolean;
   active: boolean;
   collapsed?: boolean;
+  onNavigate?: () => void;
 }) {
   const label = title || "Untitled";
 
   if (collapsed) {
     return (
-      <SidebarIconButton href={`/notes/${noteId}`} label={label} active={active}>
+      <SidebarIconButton
+        href={`/notes/${noteId}`}
+        label={label}
+        active={active}
+        onNavigate={onNavigate}
+      >
         {isFavorite ? (
           <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
         ) : (
@@ -127,6 +139,7 @@ function SidebarNoteLink({
   return (
     <Link
       href={`/notes/${noteId}`}
+      onClick={onNavigate}
       className={cn(
         "clay-nav-item flex items-center gap-2.5 px-3 py-2 text-sm",
         active && "clay-nav-item-active",
@@ -146,6 +159,8 @@ export function AppSidebar({
   sidebar,
   collapsed,
   onToggleCollapsed,
+  isMobile = false,
+  onMobileClose,
 }: AppSidebarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -153,17 +168,19 @@ export function AppSidebar({
   const activeTagId = searchParams.get("tag");
   const isDashboard = pathname === "/dashboard";
 
+  const handleNavigate = isMobile ? onMobileClose : undefined;
+
   return (
     <aside
       className={cn(
-        "clay-sidebar flex h-full min-h-0 flex-col",
-        collapsed ? "w-14 px-2 py-3" : "w-60 px-3 py-4",
+        "clay-sidebar flex h-full min-h-0 w-full flex-col",
+        collapsed ? "px-2 py-3" : "px-3 py-4",
       )}
     >
       <div
         className={cn(
-          "flex min-h-0 flex-1 flex-col overflow-y-auto",
-          collapsed ? "items-center gap-3" : "gap-6",
+          "flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain",
+          collapsed ? "items-center gap-2" : "gap-6",
         )}
       >
         <form action={createNote} className="w-full">
@@ -190,17 +207,23 @@ export function AppSidebar({
           {collapsed ? (
             <button
               type="button"
-              onClick={openQuickSwitcher}
+              onClick={() => {
+                openQuickSwitcher();
+                onMobileClose?.();
+              }}
               title="Search notes"
               aria-label="Search notes"
-              className="clay-nav-item flex h-9 w-9 items-center justify-center"
+              className="clay-nav-item flex h-9 w-9 shrink-0 items-center justify-center"
             >
               <Search className="h-4 w-4 text-muted-foreground" />
             </button>
           ) : (
             <button
               type="button"
-              onClick={openQuickSwitcher}
+              onClick={() => {
+                openQuickSwitcher();
+                onMobileClose?.();
+              }}
               className="clay-nav-item flex w-full items-center justify-between gap-2 px-3 py-2 text-sm"
             >
               <span className="flex items-center gap-2.5">
@@ -254,6 +277,7 @@ export function AppSidebar({
                     isFavorite={note.isFavorite}
                     active={pathname === `/notes/${note.id}`}
                     collapsed={collapsed}
+                    onNavigate={handleNavigate}
                   />
                 </li>
               ))}
@@ -278,6 +302,7 @@ export function AppSidebar({
                     href={`/dashboard?folder=${folder.id}`}
                     label={folder.name}
                     active={isActive}
+                    onNavigate={handleNavigate}
                   >
                     <Folder className="h-4 w-4 text-muted-foreground" />
                   </SidebarIconButton>
@@ -298,6 +323,7 @@ export function AppSidebar({
                   <li key={folder.id} className="group flex items-center gap-0.5">
                     <Link
                       href={`/dashboard?folder=${folder.id}`}
+                      onClick={handleNavigate}
                       className={cn(
                         "clay-nav-item flex min-w-0 flex-1 items-center justify-between gap-2 px-3 py-2 text-sm",
                         isActive && "clay-nav-item-active",
@@ -340,6 +366,7 @@ export function AppSidebar({
                     href={`/dashboard?tag=${tag.id}`}
                     label={tag.name}
                     active={isActive}
+                    onNavigate={handleNavigate}
                   >
                     <Hash className="h-4 w-4 text-muted-foreground" />
                   </SidebarIconButton>
@@ -360,6 +387,7 @@ export function AppSidebar({
                   <li key={tag.id} className="group flex items-center gap-0.5">
                     <Link
                       href={`/dashboard?tag=${tag.id}`}
+                      onClick={handleNavigate}
                       className={cn(
                         "clay-nav-item flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2 text-sm",
                         isActive && "clay-nav-item-active",
@@ -390,27 +418,42 @@ export function AppSidebar({
         )}
       >
         <div className="clay-sidebar-separator mb-3" aria-hidden />
-        <Button
-          type="button"
-          variant="ghost"
-          size={collapsed ? "icon" : "sm"}
-          className={cn(
-            "text-muted-foreground hover:text-foreground",
-            !collapsed && "w-full justify-start gap-2 px-2",
-          )}
-          onClick={onToggleCollapsed}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? (
-            <PanelLeft className="h-4 w-4" />
-          ) : (
-            <>
-              <PanelLeftClose className="h-4 w-4" />
-              Collapse sidebar
-            </>
-          )}
-        </Button>
+        {isMobile ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-2 px-2 text-muted-foreground hover:text-foreground"
+            onClick={onMobileClose}
+            title="Close sidebar"
+            aria-label="Close sidebar"
+          >
+            <PanelLeftClose className="h-4 w-4" />
+            Close sidebar
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="ghost"
+            size={collapsed ? "icon" : "sm"}
+            className={cn(
+              "text-muted-foreground hover:text-foreground",
+              !collapsed && "w-full justify-start gap-2 px-2",
+            )}
+            onClick={onToggleCollapsed}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? (
+              <PanelLeft className="h-4 w-4" />
+            ) : (
+              <>
+                <PanelLeftClose className="h-4 w-4" />
+                Collapse sidebar
+              </>
+            )}
+          </Button>
+        )}
       </div>
     </aside>
   );

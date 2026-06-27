@@ -80,11 +80,11 @@ export function DashboardMain({
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+        <header className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold tracking-tight">{pageTitle}</h1>
+              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{pageTitle}</h1>
               {activeTagColor && (
                 <span
                   className="h-2.5 w-2.5 rounded-full ring-1 ring-border/60"
@@ -105,7 +105,9 @@ export function DashboardMain({
           </div>
 
           {hasNotes && (
-            <NoteViewToggle view={view} onChange={handleViewChange} />
+            <div className="shrink-0 self-start">
+              <NoteViewToggle view={view} onChange={handleViewChange} />
+            </div>
           )}
         </header>
 

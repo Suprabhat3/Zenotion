@@ -1,11 +1,21 @@
 "use client";
 
-import { Suspense, useCallback, useSyncExternalStore, type ReactNode } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
+import { PanelLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MOBILE_SIDEBAR_QUERY, useMediaQuery } from "@/lib/use-media-query";
 import type { SidebarData } from "@/lib/types";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AiSettingsHost } from "@/components/ai-settings-host";
 import { QuickSwitcher } from "@/components/quick-switcher";
+import { Button } from "@/components/ui/button";
 
 const SIDEBAR_COLLAPSED_KEY = "zenotion-sidebar-collapsed";
 const SIDEBAR_CHANGE_EVENT = "zenotion-sidebar-change";
@@ -36,14 +46,15 @@ function getSidebarCollapsedServerSnapshot(): boolean {
 
 function SidebarFallback({ collapsed }: { collapsed: boolean }) {
   return (
-    <aside
-      className={cn("animate-pulse p-4", collapsed ? "w-14" : "w-60")}
-      aria-hidden
-    />
+    <aside className="w-full animate-pulse p-4" aria-hidden />
   );
 }
 
 export function AppShell({ sidebar, children }: AppShellProps) {
+  const isMobile = useMediaQuery(MOBILE_SIDEBAR_QUERY);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const isMobileDrawerOpen = isMobile && mobileOpen;
+
   const hydrated = useSyncExternalStore(
     subscribeToSidebarStorage,
     () => true,
@@ -61,14 +72,43 @@ export function AppShell({ sidebar, children }: AppShellProps) {
     window.dispatchEvent(new Event(SIDEBAR_CHANGE_EVENT));
   }, []);
 
-  const isCollapsed = hydrated && collapsed;
+  const closeMobileSidebar = useCallback(() => {
+    setMobileOpen(false);
+  }, []);
+
+  const openMobileSidebar = useCallback(() => {
+    setMobileOpen(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileDrawerOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMobileDrawerOpen]);
+
+  const isCollapsed = hydrated && collapsed && !isMobile;
 
   return (
-    <div className="flex min-h-0 flex-1 gap-3 p-3">
+    <div className="relative flex min-h-0 flex-1 gap-3 p-3 max-lg:gap-0 max-lg:p-2">
+      {isMobileDrawerOpen ? (
+        <button
+          type="button"
+          className="app-sidebar-backdrop"
+          aria-label="Close sidebar"
+          onClick={closeMobileSidebar}
+        />
+      ) : null}
+
       <div
         className={cn(
           "clay-sidebar-shell",
           isCollapsed && "clay-sidebar-shell-collapsed",
+          isMobile && "clay-sidebar-shell-mobile",
+          isMobileDrawerOpen && "clay-sidebar-shell-mobile-open",
         )}
       >
         <Suspense fallback={<SidebarFallback collapsed={isCollapsed} />}>
@@ -76,10 +116,28 @@ export function AppShell({ sidebar, children }: AppShellProps) {
             sidebar={sidebar}
             collapsed={isCollapsed}
             onToggleCollapsed={toggleCollapsed}
+            isMobile={isMobile}
+            onMobileClose={closeMobileSidebar}
           />
         </Suspense>
       </div>
+
       <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        {isMobile ? (
+          <div className="app-mobile-toolbar shrink-0">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 shrink-0"
+              onClick={openMobileSidebar}
+              title="Open sidebar"
+              aria-label="Open sidebar"
+            >
+              <PanelLeft className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : null}
         {children}
       </main>
       <AiSettingsHost />

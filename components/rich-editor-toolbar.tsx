@@ -125,7 +125,7 @@ export function RichEditorToolbar({ editor, className }: RichEditorToolbarProps)
   return (
     <div
       className={cn(
-        "rich-editor-toolbar flex shrink-0 flex-wrap items-center gap-0.5 px-2 py-1.5 sm:px-3",
+        "rich-editor-toolbar flex shrink-0 items-center gap-0.5 overflow-x-auto px-2 py-1.5 sm:flex-wrap sm:overflow-visible sm:px-3",
         className,
       )}
     >

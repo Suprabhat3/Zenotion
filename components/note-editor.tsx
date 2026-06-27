@@ -15,6 +15,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import type { AiAction } from "@/lib/validators";
 import type { ApiResponse } from "@/lib/api";
 import type { NoteDetail, TagSummary, EditorSelection } from "@/lib/types";
@@ -51,6 +52,7 @@ import {
 const EDITOR_MODE_KEY = "zenotion-editor-mode";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
+type MarkdownMobilePane = "edit" | "preview";
 
 type NoteEditorProps = {
   note: NoteDetail;
@@ -92,6 +94,8 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
   const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
   const [richEditor, setRichEditor] = useState<Editor | null>(null);
   const [printPortalReady, setPrintPortalReady] = useState(false);
+  const [markdownMobilePane, setMarkdownMobilePane] =
+    useState<MarkdownMobilePane>("edit");
 
   useEffect(() => {
     setPrintPortalReady(true);
@@ -110,6 +114,7 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
     localStorage.setItem(EDITOR_MODE_KEY, mode);
     setEditorSelection(null);
     setSelectionRect(null);
+    setMarkdownMobilePane("edit");
     if (mode === "rich") {
       setRichKey((k) => k + 1);
     }
@@ -371,16 +376,16 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
         </div>
 
         {/* Actions — stays visible; only the note body scrolls below */}
-        <div className="note-editor-toolbar z-10 flex shrink-0 flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
+        <div className="note-editor-toolbar z-10 flex shrink-0 items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
           <EditorModeToggle mode={editorMode} onChange={handleModeChange} />
 
-          <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 hidden text-xs tabular-nums text-muted-foreground md:inline">
+          <div className="note-editor-toolbar-actions flex items-center gap-1.5">
+          <span className="mr-1 hidden text-xs tabular-nums text-muted-foreground lg:inline">
             {wordCount === 1 ? "1 word" : `${wordCount} words`}
           </span>
           {saveStatus !== "idle" && (
             <span
-              className={`mr-1 flex items-center gap-1 text-xs transition-colors ${
+              className={`mr-1 flex shrink-0 items-center gap-1 text-xs transition-colors ${
                 saveStatus === "error"
                   ? "text-destructive"
                   : saveStatus === "saved"
@@ -393,12 +398,12 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
               )}
               {saveStatus === "saved" && <Check className="h-3 w-3" />}
               {saveStatus === "error" && <TriangleAlert className="h-3 w-3" />}
-              {statusLabel[saveStatus]}
+              <span className="max-sm:sr-only">{statusLabel[saveStatus]}</span>
               {saveStatus === "error" && (
                 <button
                   type="button"
                   onClick={handleRetrySave}
-                  className="ml-1 underline underline-offset-2 hover:no-underline"
+                  className="ml-1 underline underline-offset-2 hover:no-underline max-sm:sr-only"
                 >
                   Retry
                 </button>
@@ -422,7 +427,7 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
             />
           </Button>
 
-          <CopyButton text={content} label="Copy" />
+          <CopyButton text={content} label="Copy" className="hidden sm:inline-flex" />
 
           <AiCommandPalette content={content} onApply={handleAiApply} />
 
@@ -461,11 +466,23 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
                 ))
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleExport}>
+              <DropdownMenuItem onClick={handleExport} className="sm:hidden">
                 <Download className="h-4 w-4" />
                 Export as Markdown
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handlePrint}>
+              <DropdownMenuItem onClick={handlePrint} className="sm:hidden">
+                <Printer className="h-4 w-4" />
+                Print / Save as PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive sm:hidden">
+                <Trash2 className="h-4 w-4" />
+                Delete note
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExport} className="hidden sm:flex">
+                <Download className="h-4 w-4" />
+                Export as Markdown
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handlePrint} className="hidden sm:flex">
                 <Printer className="h-4 w-4" />
                 Print / Save as PDF
               </DropdownMenuItem>
@@ -481,7 +498,7 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="text-destructive hover:text-destructive"
+            className="hidden text-destructive hover:text-destructive sm:inline-flex"
             onClick={handleDelete}
           >
             <Trash2 className="h-4 w-4" />
@@ -523,9 +540,36 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
             </div>
           </div>
         ) : (
-          <div className="editor-split grid min-h-0 flex-1 grid-cols-1 overflow-hidden lg:grid-cols-2">
-            <div className="editor-pane flex min-h-0 flex-col overflow-hidden border-b lg:border-b-0 lg:border-r lg:border-border/50">
-              <div className="editor-pane-header flex shrink-0 items-center justify-between px-4 py-2.5">
+          <div className="editor-split flex min-h-0 flex-1 flex-col overflow-hidden lg:grid lg:grid-cols-2">
+            <div className="editor-markdown-tabs">
+              <button
+                type="button"
+                className={cn(
+                  "editor-markdown-tab",
+                  markdownMobilePane === "edit" && "editor-markdown-tab-active",
+                )}
+                onClick={() => setMarkdownMobilePane("edit")}
+              >
+                Markdown
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  "editor-markdown-tab",
+                  markdownMobilePane === "preview" && "editor-markdown-tab-active",
+                )}
+                onClick={() => setMarkdownMobilePane("preview")}
+              >
+                Preview
+              </button>
+            </div>
+            <div
+              className={cn(
+                "editor-pane flex min-h-0 flex-1 flex-col overflow-hidden border-b lg:border-b-0 lg:border-r lg:border-border/50",
+                markdownMobilePane !== "edit" && "hidden lg:flex",
+              )}
+            >
+              <div className="editor-pane-header hidden shrink-0 items-center justify-between px-4 py-2.5 lg:flex">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Markdown
                 </span>
@@ -539,14 +583,19 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
                 />
               </div>
             </div>
-            <div className="editor-pane flex min-h-0 flex-col overflow-hidden">
-              <div className="editor-pane-header flex shrink-0 items-center justify-between px-4 py-2.5">
+            <div
+              className={cn(
+                "editor-pane flex min-h-0 flex-1 flex-col overflow-hidden",
+                markdownMobilePane !== "preview" && "hidden lg:flex",
+              )}
+            >
+              <div className="editor-pane-header hidden shrink-0 items-center justify-between px-4 py-2.5 lg:flex">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Preview
                 </span>
                 <CopyButton text={content} label="Copy all" />
               </div>
-              <div className="note-editor-body min-h-0 flex-1 bg-muted/20 px-6 py-6 lg:px-10">
+              <div className="note-editor-body min-h-0 flex-1 bg-muted/20 px-4 py-4 sm:px-6 lg:px-10">
                 <MarkdownPreview content={content} />
               </div>
             </div>
