@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useSyncExternalStore } from "react";
-import { Clock, X } from "lucide-react";
+import { Clock, Plus, X } from "lucide-react";
 import type { NoteSummary } from "@/lib/types";
+import { createNote } from "@/app/(app)/notes/actions";
 import { NoteList } from "@/components/note-list";
 import { NoteViewToggle, type NotesViewMode } from "@/components/note-view-toggle";
 import { Button } from "@/components/ui/button";
@@ -105,7 +106,16 @@ export function DashboardMain({
           </div>
 
           {hasNotes && (
-            <div className="shrink-0 self-start">
+            <div className="flex shrink-0 items-center gap-2 self-start">
+              {createFolderId && (
+                <form action={createNote}>
+                  <input type="hidden" name="folderId" value={createFolderId} />
+                  <Button type="submit" className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    {createLabel}
+                  </Button>
+                </form>
+              )}
               <NoteViewToggle view={view} onChange={handleViewChange} />
             </div>
           )}

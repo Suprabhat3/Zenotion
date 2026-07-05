@@ -11,8 +11,10 @@ import TaskItem from "@tiptap/extension-task-item";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { Markdown } from "tiptap-markdown";
 import { common, createLowlight } from "lowlight";
+import { PreserveBlankLinesParagraph } from "@/components/tiptap/preserve-blank-lines-paragraph";
 import { RichEditorToolbar } from "@/components/rich-editor-toolbar";
 import type { EditorSelection } from "@/lib/types";
+import { encodeMarkdownBlankLines } from "@/lib/markdown-blank-lines";
 import { cn } from "@/lib/utils";
 
 const lowlight = createLowlight(common);
@@ -57,7 +59,9 @@ export function RichTextEditor({
       StarterKit.configure({
         codeBlock: false,
         heading: { levels: [1, 2, 3] },
+        paragraph: false,
       }),
+      PreserveBlankLinesParagraph,
       Placeholder.configure({
         placeholder: "Start writing, or press / for ideas…",
       }),
@@ -72,7 +76,7 @@ export function RichTextEditor({
         transformCopiedText: true,
       }),
     ],
-    content,
+    content: encodeMarkdownBlankLines(content),
     editorProps: {
       attributes: {
         class: "rich-editor-content outline-none px-2 py-4",
