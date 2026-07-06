@@ -1,13 +1,30 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Sparkles, Wand2 } from "lucide-react";
+import {
+  ArrowRightLeft,
+  CheckSquare,
+  Languages,
+  Layers,
+  Loader2,
+  ListTree,
+  MessageSquarePlus,
+  PenLine,
+  SpellCheck,
+  Sparkles,
+  SquareStack,
+  Wand2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { requestAiCompletion } from "@/lib/ai-client";
 import { isAiConfigured } from "@/lib/ai-providers";
 import { openAiSettings, useAiConfig } from "@/lib/ai-storage";
 import type { EditorSelection } from "@/lib/types";
-import type { InlineAiAction } from "@/lib/validators";
+import {
+  INLINE_ACTIONS_NEEDING_INSTRUCTION,
+  INLINE_AI_ACTIONS,
+  type InlineAiAction,
+} from "@/lib/validators";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,17 +34,32 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 
-const INLINE_ACTIONS: {
-  action: InlineAiAction;
-  label: string;
-  icon: typeof Wand2;
-}[] = [
-  { action: "rewrite", label: "Improve", icon: Wand2 },
-  { action: "simplify", label: "Shorten", icon: Sparkles },
-  { action: "fix-grammar", label: "Fix grammar", icon: Sparkles },
-];
+const INLINE_ACTION_META: Record<
+  InlineAiAction,
+  { label: string; hint: string; icon: typeof Wand2 }
+> = {
+  rewrite: { label: "Improve writing", hint: "Clearer wording, same meaning", icon: Wand2 },
+  simplify: { label: "Simplify", hint: "Shorter, easier to read", icon: SquareStack },
+  "fix-grammar": { label: "Fix grammar", hint: "Spelling & punctuation", icon: SpellCheck },
+  summarize: { label: "Summarize", hint: "Condense to the key points", icon: Layers },
+  continue: { label: "Continue writing", hint: "Extend from the selection", icon: PenLine },
+  "change-tone": { label: "Change tone…", hint: "Rewrite in a chosen tone", icon: ArrowRightLeft },
+  "extract-tasks": { label: "Extract tasks", hint: "Turn into a checklist", icon: CheckSquare },
+  "create-outline": { label: "Create outline", hint: "Structured outline", icon: ListTree },
+  translate: { label: "Translate…", hint: "Translate to another language", icon: Languages },
+  flashcards: { label: "Generate flashcards", hint: "Q/A study pairs", icon: SquareStack },
+  "clean-markdown": { label: "Clean to markdown", hint: "Tidy messy text", icon: Sparkles },
+  custom: { label: "Custom prompt…", hint: "Tell the AI exactly what to do", icon: MessageSquarePlus },
+};
 
 type InlineAiToolbarProps = {
   selection: EditorSelection | null;
@@ -46,13 +78,18 @@ export function InlineAiToolbar({
   const configured = isAiConfigured(aiConfig);
   const toolbarRef = useRef<HTMLDivElement>(null);
 
+  const [menuOpen, setMenuOpen] = useState(false);
   const [loadingAction, setLoadingAction] = useState<InlineAiAction | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewText, setPreviewText] = useState("");
   const [previewAction, setPreviewAction] = useState<InlineAiAction | null>(null);
 
+  const [instructionOpen, setInstructionOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<InlineAiAction | null>(null);
+  const [instruction, setInstruction] = useState("");
+
   const runAction = useCallback(
-    async (action: InlineAiAction) => {
+    async (action: InlineAiAction, extraInstruction?: string) => {
       if (!selection?.text.trim()) return;
 
       if (!configured) {
@@ -66,6 +103,7 @@ export function InlineAiToolbar({
         const result = await requestAiCompletion(aiConfig, {
           action,
           content: selection.text,
+          instruction: extraInstruction,
         });
         setPreviewText(result.result);
         setPreviewAction(action);
@@ -79,6 +117,28 @@ export function InlineAiToolbar({
     [aiConfig, configured, selection],
   );
 
+  function handleSelectAction(action: InlineAiAction) {
+    setMenuOpen(false);
+    if (INLINE_ACTIONS_NEEDING_INSTRUCTION.includes(action)) {
+      setPendingAction(action);
+      setInstruction("");
+      setInstructionOpen(true);
+      return;
+    }
+    void runAction(action);
+  }
+
+  function handleInstructionSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pendingAction) return;
+    if (pendingAction === "custom" && !instruction.trim()) {
+      toast.error("Describe what you'd like the AI to do.");
+      return;
+    }
+    setInstructionOpen(false);
+    void runAction(pendingAction, instruction.trim() || undefined);
+  }
+
   function handleApplyPreview() {
     onReplaceSelection(previewText);
     setPreviewOpen(false);
@@ -87,7 +147,7 @@ export function InlineAiToolbar({
   }
 
   useEffect(() => {
-    if (!selection || previewOpen) return;
+    if (!selection || previewOpen || menuOpen || instructionOpen) return;
 
     function onPointerDown(e: MouseEvent) {
       const target = e.target as Node;
@@ -105,45 +165,101 @@ export function InlineAiToolbar({
       document.removeEventListener("mousedown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [selection, previewOpen, onDismiss]);
+  }, [selection, previewOpen, menuOpen, instructionOpen, onDismiss]);
+
+  const previewDialog = (
+    <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>AI preview</DialogTitle>
+          <DialogDescription>Review the suggestion before applying.</DialogDescription>
+        </DialogHeader>
+        <Textarea
+          value={previewText}
+          readOnly
+          className="max-h-64 min-h-32 resize-none font-mono text-sm"
+        />
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button type="button" variant="ghost" onClick={() => setPreviewOpen(false)}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={handleApplyPreview}>
+            Replace selection
+          </Button>
+          {previewAction && (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={loadingAction !== null}
+              onClick={() => void runAction(previewAction, instruction.trim() || undefined)}
+            >
+              Try again
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const instructionDialog = (
+    <Dialog open={instructionOpen} onOpenChange={setInstructionOpen}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{pendingAction ? INLINE_ACTION_META[pendingAction].label : "AI"}</DialogTitle>
+          <DialogDescription>
+            {pendingAction === "custom"
+              ? "Describe how you want this text reformatted or rewritten."
+              : "Add a short instruction for this action."}
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleInstructionSubmit} className="space-y-3">
+          {pendingAction === "custom" ? (
+            <Textarea
+              value={instruction}
+              onChange={(e) => setInstruction(e.target.value)}
+              placeholder="e.g. Rewrite as a numbered step-by-step guide"
+              className="min-h-24 resize-none"
+              autoFocus
+            />
+          ) : (
+            <input
+              value={instruction}
+              onChange={(e) => setInstruction(e.target.value)}
+              placeholder={
+                pendingAction === "translate"
+                  ? "Target language (e.g. Spanish)"
+                  : "Target tone (e.g. friendly, formal)"
+              }
+              autoFocus
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          )}
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" variant="ghost" onClick={() => setInstructionOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={pendingAction === "custom" && !instruction.trim()}
+            >
+              Run
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 
   if (!selection?.text.trim() || !anchorRect) {
     return (
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>AI preview</DialogTitle>
-            <DialogDescription>Review the suggestion before applying.</DialogDescription>
-          </DialogHeader>
-          <Textarea
-            value={previewText}
-            readOnly
-            className="max-h-64 min-h-32 resize-none font-mono text-sm"
-          />
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="ghost" onClick={() => setPreviewOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="button" onClick={handleApplyPreview}>
-              Replace selection
-            </Button>
-            {previewAction && (
-              <Button
-                type="button"
-                variant="outline"
-                disabled={loadingAction !== null}
-                onClick={() => void runAction(previewAction)}
-              >
-                Try again
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <>
+        {previewDialog}
+        {instructionDialog}
+      </>
     );
   }
 
-  const top = Math.max(8, anchorRect.top - 48);
+  const top = Math.max(8, anchorRect.top - 44);
   const left = Math.max(8, anchorRect.left + anchorRect.width / 2);
 
   return (
@@ -155,58 +271,77 @@ export function InlineAiToolbar({
         role="toolbar"
         aria-label="AI actions for selected text"
       >
-        <Sparkles className="mx-1 h-3.5 w-3.5 text-muted-foreground" />
-        {INLINE_ACTIONS.map(({ action, label, icon: Icon }) => (
-          <Button
-            key={action}
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-8 gap-1.5 px-2 text-xs"
-            disabled={loadingAction !== null}
-            onClick={() => void runAction(action)}
-          >
-            {loadingAction === action ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Icon className="h-3.5 w-3.5" />
+        <Sparkles className="mx-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 gap-1.5 px-2 text-xs"
+          disabled={loadingAction !== null}
+          onClick={() => handleSelectAction("rewrite")}
+        >
+          {loadingAction === "rewrite" ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Wand2 className="h-3.5 w-3.5" />
+          )}
+          Improve
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5 px-2 text-xs"
+          disabled={loadingAction !== null}
+          onClick={() => handleSelectAction("custom")}
+        >
+          <MessageSquarePlus className="h-3.5 w-3.5" />
+          Custom prompt
+        </Button>
+
+        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-xs"
+              disabled={loadingAction !== null}
+            >
+              {loadingAction && loadingAction !== "rewrite" && loadingAction !== "custom" ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                "More"
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-64">
+            {INLINE_AI_ACTIONS.filter((a) => a !== "rewrite" && a !== "custom").map(
+              (action, index) => {
+                const meta = INLINE_ACTION_META[action];
+                const Icon = meta.icon;
+                return (
+                  <div key={action}>
+                    {index === 2 && <DropdownMenuSeparator />}
+                    <DropdownMenuItem onSelect={() => handleSelectAction(action)}>
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex flex-col">
+                        <span>{meta.label}</span>
+                        <span className="text-xs text-muted-foreground">{meta.hint}</span>
+                      </div>
+                    </DropdownMenuItem>
+                  </div>
+                );
+              },
             )}
-            {label}
-          </Button>
-        ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>AI preview</DialogTitle>
-            <DialogDescription>Review the suggestion before applying.</DialogDescription>
-          </DialogHeader>
-          <Textarea
-            value={previewText}
-            readOnly
-            className="max-h-64 min-h-32 resize-none font-mono text-sm"
-          />
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="ghost" onClick={() => setPreviewOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="button" onClick={handleApplyPreview}>
-              Replace selection
-            </Button>
-            {previewAction && (
-              <Button
-                type="button"
-                variant="outline"
-                disabled={loadingAction !== null}
-                onClick={() => void runAction(previewAction)}
-              >
-                Try again
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {previewDialog}
+      {instructionDialog}
     </>
   );
 }

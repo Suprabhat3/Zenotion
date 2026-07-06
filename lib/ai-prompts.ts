@@ -58,6 +58,10 @@ export function buildAiPrompts(
       system: `${base} Clean messy text into well-structured GitHub-flavored markdown with headings, lists, and emphasis where appropriate.`,
       user: content,
     },
+    custom: {
+      system: `${base} Follow the user's custom instruction exactly, applying it to the provided text. Instruction: ${instruction ?? ""}`,
+      user: content,
+    },
   };
 
   return prompts[action];

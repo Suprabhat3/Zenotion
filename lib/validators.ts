@@ -49,16 +49,20 @@ export const AI_ACTIONS = [
   "translate",
   "flashcards",
   "clean-markdown",
+  "custom",
 ] as const;
 
 export const aiRequestSchema = z.object({
   action: z.enum(AI_ACTIONS),
   content: z.string().trim().min(1, "There's no text to work with.").max(50_000),
-  instruction: z.string().trim().max(200).optional(),
+  instruction: z.string().trim().max(2000).optional(),
   provider: z.enum(AI_PROVIDERS),
   model: z.string().trim().min(1, "Model is required.").max(120),
   apiKey: z.string().trim().min(8, "API key is required.").max(500),
-});
+}).refine(
+  (v) => v.action !== "custom" || Boolean(v.instruction?.trim()),
+  { message: "Describe what you'd like the AI to do.", path: ["instruction"] },
+);
 
 export type AiAction = (typeof AI_ACTIONS)[number];
 
@@ -117,14 +121,33 @@ export const versionIdSchema = z.object({
   versionId: z.string().cuid(),
 });
 
-/** Subset of AI actions suited for inline text selection. */
+/**
+ * Subset of AI actions suited for inline text selection. Excludes
+ * `generate-title`, which acts on the whole note rather than a selection.
+ */
 export const INLINE_AI_ACTIONS = [
   "rewrite",
   "simplify",
   "fix-grammar",
+  "summarize",
+  "continue",
+  "change-tone",
+  "extract-tasks",
+  "create-outline",
+  "translate",
+  "flashcards",
+  "clean-markdown",
+  "custom",
 ] as const;
 
 export type InlineAiAction = (typeof INLINE_AI_ACTIONS)[number];
+
+/** Inline actions that require a short free-form instruction before running. */
+export const INLINE_ACTIONS_NEEDING_INSTRUCTION: InlineAiAction[] = [
+  "change-tone",
+  "translate",
+  "custom",
+];
 
 /**
  * Validate `data` against `schema`, throwing a 400 `ApiError` with field

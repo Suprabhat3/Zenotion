@@ -35,6 +35,7 @@ const ACTION_LABELS: Record<AiAction, string> = {
   translate: "Translate",
   flashcards: "Generate flashcards",
   "clean-markdown": "Clean to markdown",
+  custom: "Custom prompt",
 };
 
 const ACTION_HINTS: Partial<Record<AiAction, string>> = {
@@ -42,9 +43,10 @@ const ACTION_HINTS: Partial<Record<AiAction, string>> = {
   rewrite: "Clearer wording, same meaning",
   continue: "Pick up where you left off",
   "generate-title": "Updates the note title",
+  custom: "Describe exactly what you want",
 };
 
-const NEEDS_INSTRUCTION: AiAction[] = ["change-tone", "translate"];
+const NEEDS_INSTRUCTION: AiAction[] = ["change-tone", "translate", "custom"];
 
 type AiResult = { result: string; action: AiAction };
 
@@ -172,6 +174,10 @@ export function AiCommandPalette({ content, onApply }: AiCommandPaletteProps) {
   function handleInstructionSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!pendingAction) return;
+    if (pendingAction === "custom" && !instruction.trim()) {
+      toast.error("Describe what you'd like the AI to do.");
+      return;
+    }
     void runAction(pendingAction, instruction || undefined);
   }
 
@@ -230,18 +236,31 @@ export function AiCommandPalette({ content, onApply }: AiCommandPaletteProps) {
           {view === "instruction" && pendingAction ? (
             <form onSubmit={handleInstructionSubmit} className="space-y-3">
               <p className="text-sm font-medium">{ACTION_LABELS[pendingAction]}</p>
-              <Input
-                value={instruction}
-                onChange={(e) => setInstruction(e.target.value)}
-                placeholder={
-                  pendingAction === "translate"
-                    ? "Target language (e.g. Spanish)"
-                    : "Target tone (e.g. friendly, formal)"
-                }
-                autoFocus
-              />
+              {pendingAction === "custom" ? (
+                <Textarea
+                  value={instruction}
+                  onChange={(e) => setInstruction(e.target.value)}
+                  placeholder="e.g. Turn this into a bullet list grouped by topic"
+                  className="min-h-24 resize-none"
+                  autoFocus
+                />
+              ) : (
+                <Input
+                  value={instruction}
+                  onChange={(e) => setInstruction(e.target.value)}
+                  placeholder={
+                    pendingAction === "translate"
+                      ? "Target language (e.g. Spanish)"
+                      : "Target tone (e.g. friendly, formal)"
+                  }
+                  autoFocus
+                />
+              )}
               <div className="flex gap-2">
-                <Button type="submit" disabled={loading}>
+                <Button
+                  type="submit"
+                  disabled={loading || (pendingAction === "custom" && !instruction.trim())}
+                >
                   {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                   Run
                 </Button>
