@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useState, useEffect, useSyncExternalStore } from "react";
 import { Clock, Plus, X } from "lucide-react";
 import type { NoteSummary } from "@/lib/types";
 import { createNote } from "@/app/(app)/notes/actions";
@@ -11,6 +11,13 @@ import { Button } from "@/components/ui/button";
 
 const NOTES_VIEW_KEY = "zenotion-notes-view";
 const NOTES_VIEW_CHANGE_EVENT = "zenotion-notes-view-change";
+const SORT_KEY = "zenotion-sort-order";
+
+type SortOption =
+  | "recent"
+  | "oldest"
+  | "az"
+  | "za";
 
 type DashboardMainProps = {
   pageTitle: string;
@@ -72,12 +79,63 @@ export function DashboardMain({
     getNotesViewServerSnapshot,
   );
 
+  const [sortOrder, setSortOrder] =
+  useState<SortOption>("recent");
+
+  useEffect(() => {
+    const saved = localStorage.getItem(SORT_KEY) as SortOption | null;
+
+    if (saved) {
+    setSortOrder(saved);
+    }
+  }, []);
+
   const handleViewChange = useCallback((next: NotesViewMode) => {
     localStorage.setItem(NOTES_VIEW_KEY, next);
     window.dispatchEvent(new Event(NOTES_VIEW_CHANGE_EVENT));
   }, []);
 
-  const hasNotes = recentNotes.length > 0 || mainNotes.length > 0;
+  const handleSortChange = ( e: React.ChangeEvent<HTMLSelectElement>,) => {
+    const value = e.target.value as SortOption;
+    setSortOrder(value);
+    localStorage.setItem(SORT_KEY, value);
+  };
+
+  const sortedNotes = [...mainNotes];
+  switch (sortOrder) {
+    case "oldest":
+      sortedNotes.sort(
+        (a, b) =>
+          new Date(a.updatedAt).getTime() -
+          new Date(b.updatedAt).getTime(),
+      );
+      break;
+
+    case "az":
+      sortedNotes.sort((a, b) =>
+        (a.title || "").localeCompare(
+          b.title || "",
+        ),
+      );
+      break;
+
+  case "za":
+    sortedNotes.sort((a, b) =>
+      (b.title || "").localeCompare(
+        a.title || "",
+      ),
+    );
+    break;
+
+  default:
+    sortedNotes.sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() -
+        new Date(a.updatedAt).getTime(),
+    );
+}
+
+const hasNotes = recentNotes.length > 0 || sortedNotes.length > 0;
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -116,7 +174,14 @@ export function DashboardMain({
                   </Button>
                 </form>
               )}
-              <NoteViewToggle view={view} onChange={handleViewChange} />
+              <select value={sortOrder onChange={handleSortChange} className="h-9 rounded-md border bg-background px-3 text-sm" >
+                <option value="recent"> Recently Updated </option>
+                <option value="oldest"> Oldest First </option>
+                <option value="az"> Title A-Z </option>
+                <option value="za"> Title Z-A </option>
+              </select>
+
+<NoteViewToggle view={view} onChange={handleViewChange} />
             </div>
           )}
         </header>
@@ -156,7 +221,7 @@ export function DashboardMain({
         )}
 
         <NoteList
-          notes={mainNotes}
+          notes={sortedNotes}
           view={view}
           emptyTitle={emptyTitle}
           emptyMessage={emptyMessage}
