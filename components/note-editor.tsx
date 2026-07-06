@@ -340,7 +340,16 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
     error: "Save failed",
   };
 
-  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+  const wordCount = content.trim()
+  ? content.trim().split(/\s+/).length
+  : 0;
+
+  const characterCount = content.length;
+
+  const readingTime = Math.max(
+    1,
+    Math.ceil(wordCount / 200)
+  );
 
   const printSurface = (
     <div id="note-print-area" aria-hidden="true">
@@ -380,9 +389,20 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
           <EditorModeToggle mode={editorMode} onChange={handleModeChange} />
 
           <div className="note-editor-toolbar-actions flex items-center gap-1.5">
-          <span className="mr-1 hidden text-xs tabular-nums text-muted-foreground lg:inline">
-            {wordCount === 1 ? "1 word" : `${wordCount} words`}
-          </span>
+            <div className="mr-2 hidden items-center gap-3 text-xs text-muted-foreground lg:flex">
+              <span>
+                {wordCount === 1 ? "1 word" : `${wordCount} words`}
+              </span>
+
+              <span>
+                {characterCount} chars
+              </span>
+
+              <span>
+                {readingTime} min read
+              </span>
+            </div>
+            
           {saveStatus !== "idle" && (
             <span
               className={`mr-1 flex shrink-0 items-center gap-1 text-xs transition-colors ${
