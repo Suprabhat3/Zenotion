@@ -24,6 +24,12 @@ function excerpt(content: string, max = 120): string {
   return line.length > max ? `${line.slice(0, max)}…` : line || "No content yet";
 }
 
+function getReadingTime(content: string): string {
+  const words = content.trim().split(/\s+/).length;
+  const minutes = Math.max( 1, Math.ceil(words / 200) );
+  return `${minutes} min read`;
+}
+
 function formatDate(date: Date | string): string {
   return new Intl.DateTimeFormat("en", {
     month: "short",
@@ -41,9 +47,17 @@ function NoteMeta({
 }) {
   return (
     <>
-      <span className="text-xs text-muted-foreground">
-        {formatDate(note.updatedAt)}
-      </span>
+      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+  <span>
+    {formatDate(note.updatedAt)}
+  </span>
+
+  <span>•</span>
+
+  <span>
+    {getReadingTime(note.content)}
+  </span>
+</div>
       {note.tags.length > 0 && (
         <div className={cn("flex flex-wrap gap-1.5", compact && "hidden sm:flex")}>
           {note.tags.map(({ tag }) => (
