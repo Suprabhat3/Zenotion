@@ -1,281 +1,346 @@
 # Zenotion
 
-Zenotion is a Notion-style AI notes application built for focus on correct Next.js implementation rather than unnecessary feature size.
+<div align="center">
 
-It demonstrates core App Router concepts: file-based routing, nested layouts, rendering strategies (SSR, ISR, and static-capable routes), route handlers with structured API responses, Prisma + Postgres integration, and Server Actions with `"use server"`.
+<h3>AI-Powered Notes & Knowledge Workspace</h3>
 
-## Live Demo
+<p>
+A modern <b>Notion-inspired productivity platform</b> built with Next.js 16, React 19, Prisma, PostgreSQL, and AI-powered workflows.
+</p>
 
-- App URL: https://zenotion-one.vercel.app/
-- Demo account : Email = test@zenotion.com, Password = Test@123
+<p>
+<img src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=nextdotjs" />
+<img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react" />
+<img src="https://img.shields.io/badge/TypeScript-Ready-3178C6?style=for-the-badge&logo=typescript" />
+<img src="https://img.shields.io/badge/Prisma-ORM-2D3748?style=for-the-badge&logo=prisma" />
+<img src="https://img.shields.io/badge/PostgreSQL-Database-336791?style=for-the-badge&logo=postgresql" />
+<img src="https://img.shields.io/badge/TailwindCSS-v4-38BDF8?style=for-the-badge&logo=tailwindcss" />
+</p>
 
-## Class Requirement Coverage
+<p>
+<img src="https://img.shields.io/github/stars/Suprabhat3/Zenotion?style=social" />
+<img src="https://img.shields.io/github/forks/Suprabhat3/Zenotion?style=social" />
+</p>
 
-This project is intentionally structured to satisfy the assignment checklist.
+</div>
 
-### 1) Next.js project setup
+---
 
-- Framework: Next.js 16 (App Router) + React 19 + TypeScript
-- Styling: Tailwind CSS 4 + reusable UI components
-- Entry scripts: `dev`, `build`, `start`, `lint` in `package.json`
+## ✨ What is Zenotion?
 
-### 2) File-based routing and multiple pages/routes
+Zenotion is a modern note-taking and knowledge management platform inspired by Notion.
 
-App routes are implemented under the `app/` directory using App Router conventions.
+Instead of focusing on feature bloat, Zenotion demonstrates how a production-grade application can be built using modern Next.js architecture:
 
-- Public pages: `/`, `/about`, `/templates`, `/share/[slug]`
-- Auth pages: `/login`, `/signup`
-- Protected app pages: `/dashboard`, `/notes/[id]`
-- API endpoints: `/api/auth/[...all]`, `/api/notes`, `/api/notes/[id]`, `/api/ai`
+* ⚡ App Router
+* 🧠 Server Actions
+* 🔌 Route Handlers
+* 🔐 Authentication
+* 🗄 PostgreSQL + Prisma
+* 🤖 AI-Powered Commands
+* 🎯 SSR, ISR & Static Rendering
+* 📦 Type-Safe APIs
 
-### 3) Layouts in Next.js
+---
 
-- Root layout: `app/layout.tsx` (theme provider, global metadata, toaster)
-- Auth layout: `app/(auth)/layout.tsx` (auth shell + redirect if already signed in)
-- App layout: `app/(app)/layout.tsx` (protected shell + sidebar + user menu)
+## 🌐 Live Demo
 
-### 4) Rendering strategy
+### Application
 
-- **SSR where needed**
-  - Authenticated dashboard and note editor fetch user-scoped data on server:
-    - `app/(app)/dashboard/page.tsx`
-    - `app/(app)/notes/[id]/page.tsx`
-  - Public shared notes use dynamic server lookup by slug:
-    - `app/share/[slug]/page.tsx`
-- **ISR where needed**
-  - Templates gallery revalidates hourly with:
-    - `app/templates/page.tsx` (`export const revalidate = 3600`)
-- **Static-capable pages**
-  - Marketing/auth pages can be statically rendered when no per-request dynamic data is needed in deployment strategy.
+https://zenotion-one.vercel.app/
 
-### 5) API Routes (Route Handlers)
-
-Implemented in `app/api/**/route.ts`:
-
-- `app/api/notes/route.ts`
-  - `GET` list current user notes
-  - `POST` create note
-- `app/api/notes/[id]/route.ts`
-  - `GET` fetch one owned note
-  - `PATCH` update note fields/tags
-  - `DELETE` delete note
-- `app/api/ai/route.ts`
-  - `POST` run AI command action
-- `app/api/auth/[...all]/route.ts`
-  - Better Auth handler integration (`GET`, `POST`)
-
-### 6) GET, POST, PUT/PATCH, DELETE operations
-
-CRUD operations are explicitly covered:
-
-- `GET`: list/read notes
-- `POST`: create notes, AI request
-- `PATCH`: update note content/title/folder/tags
-- `DELETE`: remove note
-
-### 7) Database connection
-
-- ORM: Prisma
-- Database: Postgres
-- Connection and Prisma client: `lib/db.ts`
-- Schema and models: `prisma/schema.prisma`
-  - `User`, `Session`, `Account`, `Verification`
-  - `Note`, `Folder`, `Tag`, `NoteTag`
-
-### 8) Structured API responses
-
-Standardized response helpers are in `lib/api.ts`:
-
-- Success shape:
-  - `{ success: true, data, message? }`
-- Error shape:
-  - `{ success: false, error: { code, message, details? } }`
-
-All route handlers use `ok(...)`, `fail(...)`, and `handleApiError(...)` for consistent response format.
-
-### 9) Proper error handling
-
-- Centralized `ApiError` and status mapping in `lib/api.ts`
-- Validation and typed parsing via Zod schemas in `lib/validators.ts`
-- Ownership and auth checks before mutations (`requireUser`, ownership guards)
-- Expected status patterns:
-  - `400` validation errors
-  - `401` unauthenticated
-  - `403` forbidden (when applicable)
-  - `404` missing resource
-  - `500` unexpected errors
-  - `503` AI provider unavailable
-
-### 10) Server Actions and `"use server"` directive
-
-Server Actions are implemented in:
-
-- `app/(app)/notes/actions.ts` (`"use server"` at file top)
-
-Actions include:
-
-- Note actions: create, rename, update content, move, toggle public, delete
-- Folder actions: create, rename, delete
-- Tag actions: create, delete, assign to note
-
-These actions are used for app-internal mutations tied to UI forms and controls.
-
-### 11) Clear difference between API Routes and Server Actions
-
-- **Route Handlers (`app/api`)** are used for HTTP-style endpoints, external-style CRUD access, auth endpoints, and AI calls.
-- **Server Actions (`"use server"`)** are used for direct, internal UI mutations from forms/components without extra client fetch boilerplate.
-
-This separation is intentional to demonstrate both patterns correctly.
-
-## Feature Overview
-
-- Authentication (email/password + optional Google OAuth via Better Auth)
-- Markdown note editing with live preview
-- Folder and tag organization
-- Public note sharing with slug-based route
-- AI command palette for note assistance
-- Light/dark theming
-
-## Tech Stack
-
-- Next.js 16 (App Router)
-- React 19 + TypeScript
-- Tailwind CSS 4
-- Prisma 7 + Postgres
-- Better Auth
-- OpenAI SDK (multi-provider support through provider adapters)
-- Zod for validation
-
-## Project Structure
+### Demo Credentials
 
 ```text
-app/
-  (auth)/
-    layout.tsx
-    login/page.tsx
-    signup/page.tsx
-  (app)/
-    layout.tsx
-    dashboard/page.tsx
-    notes/
-      [id]/page.tsx
-      actions.ts
-  about/page.tsx
-  templates/page.tsx
-  share/[slug]/page.tsx
-  api/
-    auth/[...all]/route.ts
-    notes/route.ts
-    notes/[id]/route.ts
-    ai/route.ts
-lib/
-  api.ts
-  auth.ts
-  db.ts
-  notes.ts
-  session.ts
-  validators.ts
-prisma/
-  schema.prisma
+Email: test@zenotion.com
+Password: Test@123
 ```
 
-## Local Setup
+---
 
-### 1) Install dependencies
+## 🎯 Core Features
+
+### 📝 Smart Note Management
+
+* Markdown note editor
+* Live preview
+* Auto-save support
+* Fast note creation
+
+### 🤖 AI Assistant
+
+* AI command palette
+* Writing assistance
+* Content enhancement
+* Multi-provider architecture
+
+### 🗂 Organization System
+
+* Folder support
+* Tag management
+* Structured note hierarchy
+* Efficient workspace organization
+
+### 🌍 Public Sharing
+
+* Share notes publicly
+* SEO-friendly URLs
+* Slug-based note access
+
+### 🔐 Authentication
+
+* Email & Password Login
+* Google OAuth Support
+* Secure Session Handling
+
+### 🎨 User Experience
+
+* Fully Responsive
+* Light Mode
+* Dark Mode
+* Clean Productivity UI
+
+---
+
+## 🏗 Architecture
+
+```text
+┌────────────────────────────┐
+│         Frontend           │
+│       React 19 UI          │
+└─────────────┬──────────────┘
+              │
+              ▼
+┌────────────────────────────┐
+│     Next.js App Router     │
+│  Server Components + SSR   │
+└─────────────┬──────────────┘
+              │
+     ┌────────┴─────────┐
+     ▼                  ▼
+Server Actions     Route Handlers
+     │                  │
+     └────────┬─────────┘
+              ▼
+┌────────────────────────────┐
+│        Prisma ORM          │
+└─────────────┬──────────────┘
+              ▼
+┌────────────────────────────┐
+│      PostgreSQL DB         │
+└────────────────────────────┘
+```
+
+---
+
+## 🛠 Tech Stack
+
+| Category       | Technology     |
+| -------------- | -------------- |
+| Framework      | Next.js 16     |
+| Frontend       | React 19       |
+| Language       | TypeScript     |
+| Styling        | Tailwind CSS 4 |
+| Database       | PostgreSQL     |
+| ORM            | Prisma         |
+| Authentication | Better Auth    |
+| Validation     | Zod            |
+| AI Integration | OpenAI SDK     |
+| Deployment     | Vercel         |
+
+---
+
+## 📁 Project Structure
+
+```bash
+app
+├── (auth)
+│   ├── login
+│   └── signup
+│
+├── (app)
+│   ├── dashboard
+│   └── notes
+│
+├── api
+│   ├── auth
+│   ├── notes
+│   └── ai
+│
+├── templates
+├── about
+└── share
+
+lib
+├── api.ts
+├── auth.ts
+├── db.ts
+├── notes.ts
+├── session.ts
+└── validators.ts
+
+prisma
+└── schema.prisma
+```
+
+---
+
+## ⚡ Rendering Strategy
+
+### Server Side Rendering (SSR)
+
+Used for:
+
+* Dashboard
+* Note Editor
+* Shared Notes
+
+### Incremental Static Regeneration (ISR)
+
+Templates Page:
+
+```ts
+export const revalidate = 3600
+```
+
+### Static Rendering
+
+Used where user-specific data is unnecessary.
+
+---
+
+## 🔌 API Endpoints
+
+### Notes
+
+```http
+GET    /api/notes
+POST   /api/notes
+GET    /api/notes/[id]
+PATCH  /api/notes/[id]
+DELETE /api/notes/[id]
+```
+
+### AI
+
+```http
+POST /api/ai
+```
+
+### Authentication
+
+```http
+GET  /api/auth/[...all]
+POST /api/auth/[...all]
+```
+
+---
+
+## 🚀 Quick Start
+
+### Clone Repository
+
+```bash
+git clone https://github.com/Suprabhat3/Zenotion.git
+cd Zenotion
+```
+
+### Install Dependencies
 
 ```bash
 pnpm install
 ```
 
-### 2) Configure environment variables
+### Configure Environment
 
-Create `.env` and add the required values:
-
-```bash
+```env
 DATABASE_URL=
+
 BETTER_AUTH_SECRET=
+
 BETTER_AUTH_URL=http://localhost:3000
 
-# Optional Google OAuth
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 ```
 
-Notes:
-
-- Keep all secrets server-only.
-- AI provider keys are entered by the user in the app UI and are not stored on the server in this project flow.
-
-### 3) Apply database migration and generate client
+### Run Database Migration
 
 ```bash
 pnpm db:migrate
 ```
 
-### 4) Run development server
+### Start Development Server
 
 ```bash
 pnpm dev
 ```
 
-Open `http://localhost:3000`.
+Open:
 
-## Verification Checklist
+```text
+http://localhost:3000
+```
 
-Run before submission:
+---
+
+## ✅ Verification Checklist
 
 ```bash
 pnpm lint
 pnpm build
 ```
 
-Manual checks:
+Verify:
 
-- Sign up and log in (email/password; Google OAuth if configured)
-- Create/read/update/delete notes
-- Create/manage folders and tags
-- Verify note autosave and update behavior
-- Toggle public share and open `/share/[slug]`
-- Test API endpoints for both success and error responses
-- Trigger AI command palette actions and verify failure handling with invalid keys
+* User Authentication
+* Note CRUD
+* Folder Management
+* Tag Management
+* Public Sharing
+* AI Commands
+* API Responses
 
+---
 
-## Submission Note
+## 🤝 Contributing
 
-This project intentionally prioritizes clean routing, clear rendering choices, robust API/error design, correct database integration, and practical Server Action usage to match the assignment goals for a small but complete Next.js application.
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
-## Getting Started
-
-First, run the development server:
+Contributions are welcome.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Fork ➜ Clone ➜ Create Branch ➜ Commit ➜ Push ➜ Open PR
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ⭐ Why Zenotion?
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Zenotion is more than a notes application.
 
-## Learn More
+It serves as a practical reference for developers learning:
 
-To learn more about Next.js, take a look at the following resources:
+* Next.js App Router
+* Server Actions
+* Route Handlers
+* Authentication
+* Prisma ORM
+* PostgreSQL Integration
+* AI Application Architecture
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+A clean example of how modern full-stack applications are built using the latest React and Next.js ecosystem.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 📄 License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+MIT License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+<div align="center">
+
+### Built with ❤️ using Next.js 16, React 19, Prisma & PostgreSQL
+
+⭐ Star the repository if you found it useful.
+
+</div>
