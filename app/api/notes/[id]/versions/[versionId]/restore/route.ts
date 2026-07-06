@@ -44,6 +44,8 @@ export async function POST(_request: Request, context: RouteContext) {
         id: true,
         title: true,
         content: true,
+        icon: true,
+        coverImage: true,
         isPublic: true,
         isFavorite: true,
         shareSlug: true,

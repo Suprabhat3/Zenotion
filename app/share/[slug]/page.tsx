@@ -48,9 +48,26 @@ export default async function SharePage({ params }: PageProps) {
         </div>
       </header>
       <article className="mx-auto max-w-3xl px-6 py-10">
+        {note.coverImage && (
+          <div className="public-fade-up mb-6 overflow-hidden rounded-xl clay-surface">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={note.coverImage}
+              alt=""
+              className="h-44 w-full object-cover sm:h-56"
+            />
+          </div>
+        )}
         <div className="public-fade-up mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="mb-2 text-3xl font-bold">{note.title}</h1>
+            <h1 className="mb-2 text-3xl font-bold">
+              {note.icon && (
+                <span className="mr-2" aria-hidden>
+                  {note.icon}
+                </span>
+              )}
+              {note.title}
+            </h1>
             <p className="text-sm text-muted-foreground">
               By {note.user.name} · Updated {formattedDate}
             </p>

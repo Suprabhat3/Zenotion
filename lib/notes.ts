@@ -5,6 +5,8 @@ const noteListSelect = {
   id: true,
   title: true,
   content: true,
+  icon: true,
+  coverImage: true,
   isPublic: true,
   isFavorite: true,
   shareSlug: true,
@@ -58,7 +60,7 @@ export async function getSidebarData(userId: string): Promise<SidebarData> {
     prisma.note.findMany({
       where: { userId },
       orderBy: [{ isFavorite: "desc" }, { updatedAt: "desc" }],
-      select: { id: true, title: true, isFavorite: true },
+      select: { id: true, title: true, icon: true, isFavorite: true },
     }),
   ]);
 
@@ -112,6 +114,8 @@ export async function getPublicNoteBySlug(slug: string) {
       id: true,
       title: true,
       content: true,
+      icon: true,
+      coverImage: true,
       updatedAt: true,
       user: { select: { name: true } },
     },

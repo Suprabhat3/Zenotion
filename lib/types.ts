@@ -21,6 +21,8 @@ export type NoteSummary = {
   id: string;
   title: string;
   content: string;
+  icon: string | null;
+  coverImage: string | null;
   isPublic: boolean;
   isFavorite: boolean;
   shareSlug: string | null;
@@ -36,6 +38,7 @@ export type NoteDetail = NoteSummary & {
 export type SidebarNoteSummary = {
   id: string;
   title: string;
+  icon: string | null;
   isFavorite: boolean;
 };
 

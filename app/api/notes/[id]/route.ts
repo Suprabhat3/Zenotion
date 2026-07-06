@@ -13,6 +13,8 @@ async function getOwnedNote(userId: string, noteId: string) {
       id: true,
       title: true,
       content: true,
+      icon: true,
+      coverImage: true,
       isPublic: true,
       isFavorite: true,
       shareSlug: true,
@@ -104,6 +106,8 @@ export async function PATCH(request: Request, context: RouteContext) {
     const hasNoteFields =
       input.title !== undefined ||
       input.content !== undefined ||
+      input.icon !== undefined ||
+      input.coverImage !== undefined ||
       input.folderId !== undefined;
 
     const note = hasNoteFields
@@ -112,12 +116,18 @@ export async function PATCH(request: Request, context: RouteContext) {
           data: {
             ...(input.title !== undefined ? { title: input.title } : {}),
             ...(input.content !== undefined ? { content: input.content } : {}),
+            ...(input.icon !== undefined ? { icon: input.icon } : {}),
+            ...(input.coverImage !== undefined
+              ? { coverImage: input.coverImage }
+              : {}),
             ...(input.folderId !== undefined ? { folderId: input.folderId } : {}),
           },
           select: {
             id: true,
             title: true,
             content: true,
+            icon: true,
+            coverImage: true,
             isPublic: true,
             isFavorite: true,
             shareSlug: true,

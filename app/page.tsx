@@ -374,6 +374,17 @@ export default async function HomePage() {
               </a>
             ))}
           </div>
+          <nav className="flex items-center gap-4">
+            <Link href="/about" className="link-underline-grow">
+              About
+            </Link>
+            <Link href="/privacy" className="link-underline-grow">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="link-underline-grow">
+              Terms &amp; Conditions
+            </Link>
+          </nav>
           <p>
             Built by{" "}
             <a

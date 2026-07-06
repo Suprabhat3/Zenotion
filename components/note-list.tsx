@@ -79,19 +79,35 @@ function NoteGridCard({ note }: { note: NoteSummary }) {
   return (
     <Link
       href={`/notes/${note.id}`}
-      className="clay-surface clay-lift-subtle flex h-full min-h-[148px] flex-col rounded-xl p-4 transition-transform hover:-translate-y-0.5"
+      className="clay-surface clay-lift-subtle flex h-full min-h-37 flex-col overflow-hidden rounded-xl transition-transform hover:-translate-y-0.5"
     >
-      <div className="mb-2 flex items-start justify-between gap-2">
-        <h3 className="line-clamp-2 font-medium leading-snug">
-          {note.title || "Untitled"}
-        </h3>
-        <NoteStatusIcons note={note} />
-      </div>
-      <p className="mb-3 line-clamp-3 flex-1 text-sm leading-relaxed text-muted-foreground">
-        {excerpt(note.content)}
-      </p>
-      <div className="mt-auto flex flex-wrap items-center gap-2">
-        <NoteMeta note={note} />
+      {note.coverImage && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={note.coverImage}
+          alt=""
+          loading="lazy"
+          className="h-20 w-full shrink-0 object-cover"
+        />
+      )}
+      <div className="flex min-h-0 flex-1 flex-col p-4">
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <h3 className="line-clamp-2 font-medium leading-snug">
+            {note.icon && (
+              <span className="mr-1.5" aria-hidden>
+                {note.icon}
+              </span>
+            )}
+            {note.title || "Untitled"}
+          </h3>
+          <NoteStatusIcons note={note} />
+        </div>
+        <p className="mb-3 line-clamp-3 flex-1 text-sm leading-relaxed text-muted-foreground">
+          {excerpt(note.content)}
+        </p>
+        <div className="mt-auto flex flex-wrap items-center gap-2">
+          <NoteMeta note={note} />
+        </div>
       </div>
     </Link>
   );
@@ -104,7 +120,13 @@ function NoteListRow({ note }: { note: NoteSummary }) {
       className="clay-surface clay-lift-subtle flex items-center gap-3 rounded-xl p-3.5 transition-transform hover:-translate-y-0.5 sm:gap-4 sm:p-4"
     >
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted/70">
-        <FileText className="h-4 w-4 text-muted-foreground" />
+        {note.icon ? (
+          <span className="text-lg leading-none" aria-hidden>
+            {note.icon}
+          </span>
+        ) : (
+          <FileText className="h-4 w-4 text-muted-foreground" />
+        )}
       </div>
 
       <div className="min-w-0 flex-1">

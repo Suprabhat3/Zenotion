@@ -7,6 +7,7 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  Image as ImageIcon,
   Italic,
   Link2,
   List,
@@ -17,6 +18,11 @@ import {
   Underline,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  imageAltText,
+  pickImageFile,
+  uploadNoteImageWithToast,
+} from "@/lib/upload-image";
 import { Button } from "@/components/ui/button";
 
 type RichEditorToolbarProps = {
@@ -104,6 +110,25 @@ export function RichEditorToolbar({ editor, className }: RichEditorToolbarProps)
       label: "Code block",
       action: () => editor.chain().focus().toggleCodeBlock().run(),
       isActive: () => editor.isActive("codeBlock"),
+    },
+    {
+      icon: ImageIcon,
+      label: "Image",
+      action: () => {
+        void pickImageFile().then(async (file) => {
+          if (!file) return;
+          const uploaded = await uploadNoteImageWithToast(file);
+          if (!uploaded || editor.isDestroyed) return;
+          editor
+            .chain()
+            .focus()
+            .setImage({
+              src: uploaded.url,
+              alt: imageAltText(uploaded.fileName),
+            })
+            .run();
+        });
+      },
     },
     {
       icon: Link2,

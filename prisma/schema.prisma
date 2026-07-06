@@ -119,6 +119,10 @@ model Note {
   id         String   @id @default(cuid())
   title      String   @default("Untitled")
   content    String   @default("")
+  // Notion-style page decorations: an emoji icon and a cover image URL
+  // (uploaded to ImageKit; only the URL is stored).
+  icon       String?
+  coverImage String?
   isPublic   Boolean  @default(false)
   isFavorite Boolean  @default(false)
   shareSlug  String?  @unique

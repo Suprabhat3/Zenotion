@@ -8,6 +8,11 @@ import type { ViewUpdate } from "@codemirror/view";
 import { EditorView } from "@codemirror/view";
 import type { EditorSelection } from "@/lib/types";
 import { getCodeMirrorTheme } from "@/lib/codemirror-theme";
+import {
+  getImageFiles,
+  markdownImage,
+  uploadNoteImageWithToast,
+} from "@/lib/upload-image";
 import { cn } from "@/lib/utils";
 
 type MarkdownCodeEditorProps = {
@@ -38,6 +43,49 @@ function getDarkModeSnapshot() {
 function getDarkModeServerSnapshot() {
   return false;
 }
+
+/**
+ * Upload pasted/dropped images to ImageKit and insert `![alt](url)` markdown
+ * at the paste cursor (or drop position) once each upload finishes.
+ */
+function insertMarkdownImages(view: EditorView, files: File[], dropPos?: number) {
+  for (const file of files) {
+    void uploadNoteImageWithToast(file).then((uploaded) => {
+      if (!uploaded) return;
+      const snippet = markdownImage(uploaded);
+      try {
+        const at = Math.min(
+          dropPos ?? view.state.selection.main.head,
+          view.state.doc.length,
+        );
+        view.dispatch({
+          changes: { from: at, insert: snippet },
+          selection: { anchor: at + snippet.length },
+        });
+      } catch {
+        // The editor was unmounted while the upload was in flight.
+      }
+    });
+  }
+}
+
+const imagePasteDropHandlers = EditorView.domEventHandlers({
+  paste(event, view) {
+    const files = getImageFiles(event.clipboardData);
+    if (files.length === 0) return false;
+    event.preventDefault();
+    insertMarkdownImages(view, files);
+    return true;
+  },
+  drop(event, view) {
+    const files = getImageFiles(event.dataTransfer);
+    if (files.length === 0) return false;
+    event.preventDefault();
+    const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+    insertMarkdownImages(view, files, pos ?? undefined);
+    return true;
+  },
+});
 
 function reportSelection(
   view: EditorView,
@@ -121,6 +169,7 @@ export function MarkdownCodeEditor({
     () => [
       markdown({ base: markdownLanguage, codeLanguages: languages }),
       EditorView.lineWrapping,
+      imagePasteDropHandlers,
       ...getCodeMirrorTheme(isDark),
     ],
     [isDark],

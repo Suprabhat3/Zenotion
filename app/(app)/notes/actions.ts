@@ -328,7 +328,7 @@ export async function copySharedNote(formData: FormData): Promise<{ id: string }
 
   const source = await prisma.note.findFirst({
     where: { shareSlug, isPublic: true },
-    select: { title: true, content: true },
+    select: { title: true, content: true, icon: true, coverImage: true },
   });
   if (!source) {
     throw new Error("Shared note not found or is no longer public.");
@@ -338,6 +338,8 @@ export async function copySharedNote(formData: FormData): Promise<{ id: string }
     data: {
       title: `${source.title} (copy)`,
       content: source.content,
+      icon: source.icon,
+      coverImage: source.coverImage,
       userId: user.id,
     },
     select: { id: true },

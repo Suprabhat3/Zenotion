@@ -17,6 +17,15 @@ export const updateNoteSchema = z
   .object({
     title: z.string().trim().max(200).optional(),
     content: z.string().max(100_000).optional(),
+    /** Emoji page icon; send `null` to remove it. */
+    icon: z.string().trim().min(1).max(64).nullish(),
+    /** Cover image URL (ImageKit); send `null` to remove it. */
+    coverImage: z
+      .string()
+      .trim()
+      .max(1000)
+      .startsWith("https://", "Cover image must be an https URL.")
+      .nullish(),
     folderId: z.string().cuid().nullish(),
     tagIds: z.array(z.string().cuid()).optional(),
   })
