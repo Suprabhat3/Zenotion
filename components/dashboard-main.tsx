@@ -151,7 +151,7 @@ export function DashboardMain({
 
         {showAllNotesHeading && mainNotes.length > 0 && (
           <h2 className="clay-divider mb-4">
-            <span className="px-2">All notes</span>
+            <span className="px-2">All notes ({mainNotes.length}) </span>
           </h2>
         )}
 
