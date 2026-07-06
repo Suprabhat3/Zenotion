@@ -32,6 +32,41 @@ function formatDate(date: Date | string): string {
   }).format(new Date(date));
 }
 
+function formatRelativeTime(date: Date | string): string {
+  const now = new Date();
+  const target = new Date(date);
+
+  const diffInSeconds = Math.floor(
+    (now.getTime() - target.getTime()) / 1000
+  );
+
+  if (diffInSeconds < 60) return "Just now";
+
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+
+  if (diffInMinutes < 60) {
+    return `${diffInMinutes} min ago`;
+  }
+
+  const diffInHours = Math.floor(diffInMinutes / 60);
+
+  if (diffInHours < 24) {
+    return `${diffInHours} hr ago`;
+  }
+
+  const diffInDays = Math.floor(diffInHours / 24);
+
+  if (diffInDays === 1) {
+    return "Yesterday";
+  }
+
+  if (diffInDays < 7) {
+    return `${diffInDays} days ago`;
+  }
+
+  return formatDate(date);
+}
+
 function NoteMeta({
   note,
   compact = false,
@@ -48,10 +83,10 @@ function NoteMeta({
         <div className={cn("flex flex-wrap gap-1.5", compact && "hidden sm:flex")}>
           {note.tags.map(({ tag }) => (
             <span
-              key={tag.id}
-              className="rounded-full bg-secondary px-2 py-0.5 text-xs"
+              className="text-xs text-muted-foreground"
+              title={formatDate(note.updatedAt)}
             >
-              {tag.name}
+              {formatRelativeTime(note.updatedAt)}
             </span>
           ))}
         </div>
