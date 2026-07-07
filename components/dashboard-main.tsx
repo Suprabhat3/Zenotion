@@ -78,6 +78,7 @@ export function DashboardMain({
   }, []);
 
   const hasNotes = recentNotes.length > 0 || mainNotes.length > 0;
+  const totalVisibleNotes = recentNotes.length + mainNotes.length;
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -85,7 +86,17 @@ export function DashboardMain({
         <header className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{pageTitle}</h1>
+              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                  {pageTitle}
+              </h1>
+
+              <span
+                className="inline-flex items-center rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
+                aria-label={`${totalVisibleNotes} notes`}
+              >
+                {totalVisibleNotes}
+              </span>
+
               {activeTagColor && (
                 <span
                   className="h-2.5 w-2.5 rounded-full ring-1 ring-border/60"
@@ -93,7 +104,7 @@ export function DashboardMain({
                   aria-hidden
                 />
               )}
-            </div>
+          </div>
             <p className="text-sm text-muted-foreground">{pageDescription}</p>
             {hasFilter && (
               <Button variant="outline" size="sm" className="mt-2 h-8 gap-1.5" asChild>

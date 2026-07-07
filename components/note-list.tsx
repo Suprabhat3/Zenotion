@@ -34,6 +34,12 @@ function formatDate(date: Date | string): string {
   }).format(new Date(date));
 }
 
+function getReadingTime(content: string): string {
+  const words = content.trim().split(/\s+/).filter(Boolean).length;
+  const minutes = Math.max(1, Math.ceil(words / 200));
+  return `${minutes} min read`;
+}
+
 function NoteMeta({
   note,
   compact = false,
@@ -43,9 +49,11 @@ function NoteMeta({
 }) {
   return (
     <>
-      <span className="text-xs text-muted-foreground">
-        {formatDate(note.updatedAt)}
-      </span>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <span>{formatDate(note.updatedAt)}</span>
+        <span>•</span>
+        <span>{getReadingTime(note.content)}</span>
+</div>
       {note.tags.length > 0 && (
         <div className={cn("flex flex-wrap gap-1.5", compact && "hidden sm:flex")}>
           {note.tags.map(({ tag }) => (
