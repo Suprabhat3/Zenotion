@@ -25,6 +25,10 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  // The single "secret note credit": at most one note per user may be
+  // marked secret. Enforced here (unique) rather than by counting notes.
+  secretNoteId String? @unique
+
   sessions Session[]
   accounts Account[]
   notes    Note[]
@@ -125,6 +129,14 @@ model Note {
   coverImage String?
   isPublic   Boolean  @default(false)
   isFavorite Boolean  @default(false)
+  // Zero-knowledge secret note: when `isSecret` is true, `content` holds the
+  // base64 AES-GCM ciphertext of { title, content }, encrypted client-side
+  // with a key derived from the user's passphrase. The server stores only
+  // opaque material and can never decrypt.
+  isSecret       Boolean @default(false)
+  secretSalt     String? // base64 PBKDF2 salt
+  secretIv       String? // base64 AES-GCM IV of the current ciphertext (rotates each save)
+  secretVerifier String? // base64 hash of a separately derived key; proves passphrase knowledge, cannot decrypt
   shareSlug  String?  @unique
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

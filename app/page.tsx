@@ -8,6 +8,7 @@ import {
   FolderTree,
   Globe,
   Keyboard,
+  Lock,
   Save,
   Sparkles,
   Tags,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import { LandingEditorMock } from "@/components/landing-editor-mock";
 import { LandingFreePromise } from "@/components/landing-free-promise";
+import { LandingSecretNote } from "@/components/landing-secret-note";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { getCurrentUser } from "@/lib/session";
@@ -70,6 +72,7 @@ const HERO_BADGES = [
   { icon: Save, label: "Autosave" },
   { icon: FolderTree, label: "Folders & tags" },
   { icon: Sparkles, label: "AI palette" },
+  { icon: Lock, label: "Secret note" },
 ] as const;
 
 const VALUE_STRIP = [
@@ -77,6 +80,7 @@ const VALUE_STRIP = [
   "Organize by project",
   "Share with a link",
   "AI on demand",
+  "One encrypted secret note",
 ] as const;
 
 const FEATURES = [
@@ -265,6 +269,9 @@ export default async function HomePage() {
         </section>
 
         <LandingFreePromise />
+
+        {/* Secret note — zero-knowledge encryption */}
+        <LandingSecretNote />
 
         {/* Workflow */}
         <section className="bg-muted/30 px-6 py-20">

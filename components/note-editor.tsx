@@ -14,6 +14,8 @@ import {
   Check,
   Download,
   Loader2,
+  Lock,
+  LockOpen,
   MoreHorizontal,
   Printer,
   Star,
@@ -30,7 +32,10 @@ import {
   deleteNote,
   moveNote,
   toggleNoteFavorite,
+  unmarkNoteSecret,
 } from "@/app/(app)/notes/actions";
+import { encryptPayload } from "@/lib/secret-crypto";
+import { SecretNoteDialog } from "@/components/secret-note-dialog";
 import { NoteHeaderDecorations } from "@/components/note-header-decorations";
 import { NoteIconPicker } from "@/components/note-icon-picker";
 import { ShareDialog } from "@/components/share-dialog";
@@ -64,15 +69,28 @@ const EDITOR_MODE_KEY = "zenotion-editor-mode";
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 type MarkdownMobilePane = "edit" | "preview";
 
+/** In-memory key material for an unlocked secret note. Never persisted. */
+export type NoteEditorSecret = {
+  encKey: CryptoKey;
+  verifier: string;
+};
+
 type NoteEditorProps = {
   note: NoteDetail;
   folders: { id: string; name: string }[];
   tags: TagSummary[];
+  /** Present while editing an unlocked secret note. */
+  secret?: NoteEditorSecret | null;
+  /** Drops the in-memory key and returns to the unlock gate. */
+  onLock?: () => void;
+  /** Id of the user's existing secret note (null when the credit is unused). */
+  existingSecretNoteId?: string | null;
 };
 
 type NotePatch = {
   title?: string;
   content?: string;
+  secretIv?: string;
 };
 
 function getStoredEditorMode(): EditorMode {
@@ -92,8 +110,16 @@ function useIsMounted(): boolean {
   );
 }
 
-export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
+export function NoteEditor({
+  note,
+  folders,
+  tags,
+  secret = null,
+  onLock,
+  existingSecretNoteId = null,
+}: NoteEditorProps) {
   const router = useRouter();
+  const [secretDialogOpen, setSecretDialogOpen] = useState(false);
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
   const [editorMode, setEditorMode] = useState<EditorMode>(() => {
@@ -147,29 +173,38 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
   }
 
   const saveNote = useCallback(
-    async (patch: NotePatch) => {
+    async (patch: NotePatch, snapshot: { title: string; content: string }) => {
       setSaveStatus("saving");
       try {
+        // Secret notes are re-encrypted client-side before every save: the
+        // whole { title, content } payload travels as ciphertext + fresh IV.
+        const body: NotePatch = secret
+          ? await encryptPayload(secret.encKey, snapshot).then((envelope) => ({
+              content: envelope.ciphertext,
+              secretIv: envelope.iv,
+            }))
+          : patch;
         const res = await fetch(`/api/notes/${note.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(patch),
+          body: JSON.stringify(body),
         });
         const json = (await res.json()) as ApiResponse<NoteDetail>;
         if (!json.success) {
           setSaveStatus("error");
           return;
         }
-        lastSaved.current = {
-          title: json.data.title,
-          content: json.data.content,
-        };
+        // For secret notes the response holds ciphertext — track the
+        // plaintext snapshot we just encrypted instead.
+        lastSaved.current = secret
+          ? snapshot
+          : { title: json.data.title, content: json.data.content };
         setSaveStatus("saved");
       } catch {
         setSaveStatus("error");
       }
     },
-    [note.id],
+    [note.id, secret],
   );
 
   useEffect(() => {
@@ -182,7 +217,7 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
       const patch: NotePatch = {};
       if (titleChanged) patch.title = title;
       if (contentChanged) patch.content = content;
-      void saveNote(patch);
+      void saveNote(patch, { title, content });
     }, 1000);
 
     return () => {
@@ -199,7 +234,7 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
     const patch: NotePatch = {};
     if (titleChanged) patch.title = title;
     if (contentChanged) patch.content = content;
-    void saveNote(patch);
+    void saveNote(patch, { title, content });
   }, [title, content, saveNote]);
 
   // Cmd/Ctrl+S forces an immediate save instead of waiting for the debounce.
@@ -311,6 +346,36 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
     const formData = new FormData();
     formData.set("noteId", note.id);
     await deleteNote(formData);
+  }
+
+  function handleLockNow() {
+    flushSave();
+    onLock?.();
+  }
+
+  async function handleRemoveSecret() {
+    if (!secret) return;
+    if (
+      !confirm(
+        "Convert this back to a normal note? Its content will be stored unencrypted again and your secret-note credit is freed.",
+      )
+    ) {
+      return;
+    }
+    const formData = new FormData();
+    formData.set("noteId", note.id);
+    formData.set("verifier", secret.verifier);
+    formData.set("title", title.trim() || "Untitled");
+    formData.set("content", content);
+    try {
+      await unmarkNoteSecret(formData);
+      toast.success("Note is no longer secret.");
+      router.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not convert the note.",
+      );
+    }
   }
 
   async function handleFavoriteToggle() {
@@ -492,9 +557,21 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
             </span>
           )}
 
+          {secret && (
+            <span
+              className="mr-1 hidden shrink-0 items-center gap-1 text-xs text-muted-foreground sm:flex"
+              title="Encrypted on this device — the server only stores ciphertext"
+            >
+              <Lock className="h-3 w-3" />
+              Secret
+            </span>
+          )}
+
           <NoteFontPicker />
 
-          <NoteVersionHistory noteId={note.id} onRestore={handleVersionRestore} />
+          {!secret && (
+            <NoteVersionHistory noteId={note.id} onRestore={handleVersionRestore} />
+          )}
 
           <Button
             variant="ghost"
@@ -512,7 +589,9 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
 
           <CopyButton text={content} label="Copy" className="hidden sm:inline-flex" />
 
-          <AiCommandPalette content={content} onApply={handleAiApply} />
+          {!secret && (
+            <AiCommandPalette content={content} onApply={handleAiApply} />
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -549,6 +628,18 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
                 ))
               )}
               <DropdownMenuSeparator />
+              {secret ? (
+                <DropdownMenuItem onClick={handleRemoveSecret}>
+                  <LockOpen className="h-4 w-4" />
+                  Remove secret protection
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => setSecretDialogOpen(true)}>
+                  <Lock className="h-4 w-4" />
+                  Make secret note
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleExport} className="sm:hidden">
                 <Download className="h-4 w-4" />
                 Export as Markdown
@@ -572,11 +663,38 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <ShareDialog
-            noteId={note.id}
-            initialIsPublic={note.isPublic}
-            initialShareSlug={note.shareSlug}
-          />
+          {secret ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 w-9 shrink-0 gap-0 px-0 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-3"
+              onClick={handleLockNow}
+              title="Lock this note now"
+              aria-label="Lock this note now"
+            >
+              <Lock className="h-4 w-4" />
+              <span className="hidden sm:inline">Lock</span>
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 w-9 shrink-0 gap-0 px-0 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-3"
+                onClick={() => setSecretDialogOpen(true)}
+                title="Make this your secret note — encrypted so only you can read it"
+                aria-label="Make secret note"
+              >
+                <Lock className="h-4 w-4" />
+                <span className="hidden lg:inline">Secret</span>
+              </Button>
+              <ShareDialog
+                noteId={note.id}
+                initialIsPublic={note.isPublic}
+                initialShareSlug={note.shareSlug}
+              />
+            </>
+          )}
 
           <Button
             variant="ghost"
@@ -591,12 +709,14 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
         </div>
 
         <div className={cn("flex min-h-0 flex-col overflow-hidden", noteFontClass)}>
-        <InlineAiToolbar
-          selection={editorSelection}
-          anchorRect={selectionRect}
-          onReplaceSelection={handleInlineReplace}
-          onDismiss={handleDismissSelection}
-        />
+        {!secret && (
+          <InlineAiToolbar
+            selection={editorSelection}
+            anchorRect={selectionRect}
+            onReplaceSelection={handleInlineReplace}
+            onDismiss={handleDismissSelection}
+          />
+        )}
 
         {editorMode === "rich" ? (
           <div className="note-editor-body min-h-0 flex-1">
@@ -717,6 +837,17 @@ export function NoteEditor({ note, folders, tags }: NoteEditorProps) {
       </div>
 
     </div>
+    {!secret && (
+      <SecretNoteDialog
+        noteId={note.id}
+        title={title}
+        content={content}
+        isPublic={note.isPublic}
+        existingSecretNoteId={existingSecretNoteId}
+        open={secretDialogOpen}
+        onOpenChange={setSecretDialogOpen}
+      />
+    )}
     {printPortalReady ? createPortal(printSurface, document.body) : null}
     </>
   );

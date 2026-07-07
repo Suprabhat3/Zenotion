@@ -27,6 +27,10 @@ export type NoteSummary = {
   isFavorite: boolean;
   shareSlug: string | null;
   folderId: string | null;
+  isSecret: boolean;
+  secretSalt: string | null;
+  secretIv: string | null;
+  secretVerifier: string | null;
   updatedAt: Date;
   tags: NoteTagRelation[];
 };
@@ -40,6 +44,7 @@ export type SidebarNoteSummary = {
   title: string;
   icon: string | null;
   isFavorite: boolean;
+  isSecret: boolean;
 };
 
 export type SidebarData = {
@@ -54,6 +59,7 @@ export type NoteSearchResult = {
   title: string;
   excerpt: string;
   isFavorite: boolean;
+  isSecret: boolean;
   folderName: string | null;
   updatedAt: string;
 };

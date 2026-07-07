@@ -7,6 +7,7 @@ import {
   FileText,
   Folder,
   Hash,
+  Lock,
   PanelLeft,
   PanelLeftClose,
   Plus,
@@ -107,6 +108,7 @@ function SidebarNoteLink({
   title,
   icon,
   isFavorite,
+  isSecret,
   active,
   collapsed,
   onNavigate,
@@ -115,6 +117,7 @@ function SidebarNoteLink({
   title: string;
   icon: string | null;
   isFavorite: boolean;
+  isSecret: boolean;
   active: boolean;
   collapsed?: boolean;
   onNavigate?: () => void;
@@ -122,7 +125,9 @@ function SidebarNoteLink({
   const label = title || "Untitled";
 
   // The note's emoji icon wins; otherwise fall back to star/file glyphs.
-  const glyph = icon ? (
+  const glyph = isSecret ? (
+    <Lock className="h-4 w-4 shrink-0 text-muted-foreground" />
+  ) : icon ? (
     <span className="w-4 shrink-0 text-center text-sm leading-none" aria-hidden>
       {icon}
     </span>
@@ -281,6 +286,7 @@ export function AppSidebar({
                     title={note.title}
                     icon={note.icon}
                     isFavorite={note.isFavorite}
+                    isSecret={note.isSecret}
                     active={pathname === `/notes/${note.id}`}
                     collapsed={collapsed}
                     onNavigate={handleNavigate}

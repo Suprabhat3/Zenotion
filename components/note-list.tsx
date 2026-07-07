@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FileText, Globe, Plus, Star } from "lucide-react";
+import { FileText, Globe, Lock, Plus, Star } from "lucide-react";
 import type { NoteSummary } from "@/lib/types";
 import type { NotesViewMode } from "@/components/note-view-toggle";
 import { cn } from "@/lib/utils";
@@ -19,8 +19,10 @@ type NoteListProps = {
   createLabel?: string;
 };
 
-function excerpt(content: string, max = 120): string {
-  const line = content.split("\n").find((l) => l.trim()) ?? "";
+function excerpt(note: NoteSummary, max = 120): string {
+  // A secret note's content is ciphertext — never show it as a preview.
+  if (note.isSecret) return "Encrypted — unlock with your password";
+  const line = note.content.split("\n").find((l) => l.trim()) ?? "";
   return line.length > max ? `${line.slice(0, max)}…` : line || "No content yet";
 }
 
@@ -61,7 +63,7 @@ function NoteMeta({
 }
 
 function NoteStatusIcons({ note }: { note: NoteSummary }) {
-  if (!note.isFavorite && !note.isPublic) return null;
+  if (!note.isFavorite && !note.isPublic && !note.isSecret) return null;
 
   return (
     <span className="flex shrink-0 items-center gap-1.5">
@@ -70,6 +72,9 @@ function NoteStatusIcons({ note }: { note: NoteSummary }) {
       )}
       {note.isPublic && (
         <Globe className="h-4 w-4 text-muted-foreground" aria-label="Public" />
+      )}
+      {note.isSecret && (
+        <Lock className="h-4 w-4 text-muted-foreground" aria-label="Encrypted" />
       )}
     </span>
   );
@@ -103,7 +108,7 @@ function NoteGridCard({ note }: { note: NoteSummary }) {
           <NoteStatusIcons note={note} />
         </div>
         <p className="mb-3 line-clamp-3 flex-1 text-sm leading-relaxed text-muted-foreground">
-          {excerpt(note.content)}
+          {excerpt(note)}
         </p>
         <div className="mt-auto flex flex-wrap items-center gap-2">
           <NoteMeta note={note} />
@@ -137,7 +142,7 @@ function NoteListRow({ note }: { note: NoteSummary }) {
           <NoteStatusIcons note={note} />
         </div>
         <p className="mt-0.5 line-clamp-1 text-sm text-muted-foreground">
-          {excerpt(note.content, 160)}
+          {excerpt(note, 160)}
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-2 sm:hidden">
           <NoteMeta note={note} compact />
