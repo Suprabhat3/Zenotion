@@ -162,9 +162,12 @@ export function DashboardMain({
 
         {showAllNotesHeading && mainNotes.length > 0 && (
           <h2 className="clay-divider mb-4">
-            <span className="px-2">All notes</span>
-          </h2>
-        )}
+            <span className="px-2"> All notes <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+              {mainNotes.length}
+            </span>
+          </span>
+        </h2>
+      )}
 
         <NoteList
           notes={mainNotes}
