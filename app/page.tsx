@@ -17,6 +17,9 @@ import {
 } from "lucide-react";
 import { LandingEditorMock } from "@/components/landing-editor-mock";
 import { LandingFreePromise } from "@/components/landing-free-promise";
+import {
+  LandingPeerlistLaunch,
+} from "@/components/landing-peerlist-launch";
 import { LandingSecretNote } from "@/components/landing-secret-note";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
@@ -269,6 +272,8 @@ export default async function HomePage() {
         </section>
 
         <LandingFreePromise />
+
+        <LandingPeerlistLaunch />
 
         {/* Secret note — zero-knowledge encryption */}
         <LandingSecretNote />
