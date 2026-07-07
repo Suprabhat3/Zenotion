@@ -22,6 +22,7 @@ import {
   Minus,
   Quote,
   Sparkles,
+  Table as TableIcon,
   Type,
 } from "lucide-react";
 import { openAiPalette } from "@/components/ai-command-palette";
@@ -169,6 +170,21 @@ export const SLASH_COMMAND_ITEMS: SlashCommandItem[] = [
           })
           .run();
       });
+    },
+  },
+  {
+    title: "Table",
+    description: "Insert a table with rows and columns",
+    icon: TableIcon,
+    group: "Blocks",
+    keywords: ["table", "grid", "rows", "columns"],
+    command: ({ editor, range }) => {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+        .run();
     },
   },
   {

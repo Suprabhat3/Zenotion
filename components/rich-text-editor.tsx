@@ -11,6 +11,7 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import Image from "@tiptap/extension-image";
+import { TableKit } from "@tiptap/extension-table";
 import {
   getImageFiles,
   imageAltText,
@@ -107,6 +108,9 @@ export function RichTextEditor({
       TaskItem.configure({ nested: true }),
       CodeBlockLowlight.configure({ lowlight }),
       Image.configure({ inline: false, allowBase64: false }),
+      TableKit.configure({
+        table: { resizable: true },
+      }),
       Markdown.configure({
         html: false,
         transformPastedText: true,

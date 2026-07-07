@@ -1104,6 +1104,40 @@ body {
   border-radius: 0.5rem;
   margin: 0.75rem 0;
 }
+.rich-editor-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  overflow: hidden;
+  table-layout: fixed;
+}
+.rich-editor-content th,
+.rich-editor-content td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  vertical-align: top;
+  text-align: left;
+  position: relative;
+}
+.rich-editor-content th {
+  font-weight: 600;
+  background: color-mix(in srgb, var(--muted) 80%, var(--card));
+}
+.rich-editor-content .selectedCell {
+  background: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.rich-editor-content .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: color-mix(in srgb, var(--foreground) 30%, transparent);
+  pointer-events: none;
+}
+.rich-editor-content.resize-cursor {
+  cursor: col-resize;
+}
 .rich-editor-content img.ProseMirror-selectednode {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
