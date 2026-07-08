@@ -1098,6 +1098,81 @@ body {
   height: 0;
   pointer-events: none;
 }
+.rich-editor-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 0.75rem 0;
+}
+.rich-editor-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  overflow: hidden;
+  table-layout: fixed;
+}
+.rich-editor-content th,
+.rich-editor-content td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  vertical-align: top;
+  text-align: left;
+  position: relative;
+}
+.rich-editor-content th {
+  font-weight: 600;
+  background: color-mix(in srgb, var(--muted) 80%, var(--card));
+}
+.rich-editor-content .selectedCell {
+  background: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.rich-editor-content .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: color-mix(in srgb, var(--foreground) 30%, transparent);
+  pointer-events: none;
+}
+.rich-editor-content.resize-cursor {
+  cursor: col-resize;
+}
+.rich-editor-content img.ProseMirror-selectednode {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* User-selectable note font (see lib/note-font.ts). The picker applies a
+   .note-font-* class on the editor body; the vars cascade into the preview
+   and rich editor. Handwriting fonts render small at body size, so each
+   class also bumps the base size. Code blocks, inline code, and the
+   markdown source editor keep their own monospace font. */
+.prose-note,
+.rich-editor-content {
+  font-family: var(--note-body-font, inherit);
+  font-size: var(--note-body-size, inherit);
+}
+.note-font-caveat {
+  --note-body-font: var(--font-caveat), cursive;
+  --note-body-size: 1.3rem;
+}
+.note-font-kalam {
+  --note-body-font: var(--font-kalam), cursive;
+  --note-body-size: 1.05rem;
+}
+.note-font-patrick-hand {
+  --note-body-font: var(--font-patrick-hand), cursive;
+  --note-body-size: 1.15rem;
+}
+.note-font-shadows-into-light {
+  --note-body-font: var(--font-shadows-into-light), cursive;
+  --note-body-size: 1.25rem;
+}
+/* Renders a font-picker menu label in the option's own font. */
+.note-font-swatch {
+  font-family: var(--note-body-font, inherit);
+}
 
 /* Editor split panes — full-height, no floating cards */
 .editor-split {

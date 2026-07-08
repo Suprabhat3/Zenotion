@@ -47,7 +47,7 @@ Instead of focusing on feature bloat, Zenotion demonstrates how a production-gra
 
 ### Application
 
-https://zenotion-one.vercel.app/
+https://zenotion.zenscail.com/
 
 ### Demo Credentials
 
@@ -262,6 +262,11 @@ BETTER_AUTH_URL=http://localhost:3000
 
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
+
+# ImageKit (note image + cover uploads; leave blank to disable uploads)
+IMAGEKIT_PRIVATE_KEY=
+IMAGEKIT_PUBLIC_KEY=
+IMAGEKIT_URL_ENDPOINT=
 ```
 
 ### Run Database Migration

@@ -5,10 +5,16 @@ const noteListSelect = {
   id: true,
   title: true,
   content: true,
+  icon: true,
+  coverImage: true,
   isPublic: true,
   isFavorite: true,
   shareSlug: true,
   folderId: true,
+  isSecret: true,
+  secretSalt: true,
+  secretIv: true,
+  secretVerifier: true,
   updatedAt: true,
   tags: {
     select: {
@@ -39,6 +45,15 @@ export async function getUserNote(
   });
 }
 
+/** Id of the user's secret note, or null when the credit is unused. */
+export async function getUserSecretNoteId(userId: string): Promise<string | null> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { secretNoteId: true },
+  });
+  return user?.secretNoteId ?? null;
+}
+
 export async function getSidebarData(userId: string): Promise<SidebarData> {
   const [folders, tags, notes] = await Promise.all([
     prisma.folder.findMany({
@@ -58,7 +73,7 @@ export async function getSidebarData(userId: string): Promise<SidebarData> {
     prisma.note.findMany({
       where: { userId },
       orderBy: [{ isFavorite: "desc" }, { updatedAt: "desc" }],
-      select: { id: true, title: true, isFavorite: true },
+      select: { id: true, title: true, icon: true, isFavorite: true, isSecret: true },
     }),
   ]);
 
@@ -87,7 +102,10 @@ export async function searchUserNotes(userId: string, query: string, limit = 20)
         ? {
             OR: [
               { title: { contains: trimmed, mode: "insensitive" } },
-              { content: { contains: trimmed, mode: "insensitive" } },
+              // The secret note's content is ciphertext — matching against it
+              // would be meaningless, so content search skips it. Its
+              // placeholder title above keeps it reachable.
+              { content: { contains: trimmed, mode: "insensitive" }, isSecret: false },
             ],
           }
         : {}),
@@ -99,6 +117,7 @@ export async function searchUserNotes(userId: string, query: string, limit = 20)
       title: true,
       content: true,
       isFavorite: true,
+      isSecret: true,
       updatedAt: true,
       folder: { select: { name: true } },
     },
@@ -107,11 +126,15 @@ export async function searchUserNotes(userId: string, query: string, limit = 20)
 
 export async function getPublicNoteBySlug(slug: string) {
   return prisma.note.findFirst({
-    where: { shareSlug: slug, isPublic: true },
+    // `isSecret: false` is belt-and-braces: secret notes can never be public,
+    // but a secret note must never leak through the share route regardless.
+    where: { shareSlug: slug, isPublic: true, isSecret: false },
     select: {
       id: true,
       title: true,
       content: true,
+      icon: true,
+      coverImage: true,
       updatedAt: true,
       user: { select: { name: true } },
     },

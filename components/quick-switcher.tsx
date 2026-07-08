@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { FileText, Folder, Loader2, Search, Star } from "lucide-react";
+import { FileText, Folder, Loader2, Lock, Search, Star } from "lucide-react";
 import type { ApiResponse } from "@/lib/api";
 import type { NoteSearchResult } from "@/lib/types";
 import { Input } from "@/components/ui/input";
@@ -154,7 +154,11 @@ export function QuickSwitcher() {
                       index === highlightIndex ? "bg-accent" : ""
                     }`}
                   >
-                    <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    {note.isSecret ? (
+                      <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    ) : (
+                      <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    )}
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-1.5">
                         <span className="truncate font-medium">

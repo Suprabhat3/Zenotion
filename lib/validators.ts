@@ -16,7 +16,20 @@ export const createNoteSchema = z.object({
 export const updateNoteSchema = z
   .object({
     title: z.string().trim().max(200).optional(),
-    content: z.string().max(100_000).optional(),
+    // Base64 ciphertext of secret notes grows ~4/3 over plaintext, so the
+    // limit is higher than the 100k plaintext cap.
+    content: z.string().max(140_000).optional(),
+    /** Fresh AES-GCM IV accompanying an encrypted secret-note save. */
+    secretIv: z.string().trim().min(1).max(64).optional(),
+    /** Emoji page icon; send `null` to remove it. */
+    icon: z.string().trim().min(1).max(64).nullish(),
+    /** Cover image URL (ImageKit); send `null` to remove it. */
+    coverImage: z
+      .string()
+      .trim()
+      .max(1000)
+      .startsWith("https://", "Cover image must be an https URL.")
+      .nullish(),
     folderId: z.string().cuid().nullish(),
     tagIds: z.array(z.string().cuid()).optional(),
   })
@@ -88,6 +101,27 @@ export const toggleNotePublicSchema = z.object({
 export const toggleNoteFavoriteSchema = z.object({
   noteId: z.string().cuid(),
   isFavorite: z.boolean(),
+});
+
+const base64String = z
+  .string()
+  .trim()
+  .min(1)
+  .regex(/^[A-Za-z0-9+/]+={0,2}$/, "Must be base64.");
+
+export const markNoteSecretSchema = z.object({
+  noteId: z.string().cuid(),
+  ciphertext: base64String.max(400_000),
+  iv: base64String.max(64),
+  salt: base64String.max(64),
+  verifier: base64String.max(128),
+});
+
+export const unmarkNoteSecretSchema = z.object({
+  noteId: z.string().cuid(),
+  verifier: base64String.max(128),
+  title: z.string().trim().min(1).max(200),
+  content: z.string().max(100_000),
 });
 
 export const searchNotesSchema = z.object({

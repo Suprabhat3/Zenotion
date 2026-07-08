@@ -1,5 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import {
+  Caveat,
+  Geist,
+  Geist_Mono,
+  Kalam,
+  Patrick_Hand,
+  Shadows_Into_Light,
+} from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SiteStructuredData } from "@/components/site-structured-data";
 import { Toaster } from "@/components/ui/sonner";
@@ -14,6 +21,30 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+// Handwriting fonts for the note font preference (see lib/note-font.ts).
+const caveat = Caveat({
+  variable: "--font-caveat",
+  subsets: ["latin"],
+});
+
+const kalam = Kalam({
+  variable: "--font-kalam",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+});
+
+const patrickHand = Patrick_Hand({
+  variable: "--font-patrick-hand",
+  subsets: ["latin"],
+  weight: "400",
+});
+
+const shadowsIntoLight = Shadows_Into_Light({
+  variable: "--font-shadows-into-light",
+  subsets: ["latin"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -94,7 +125,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className="h-full">
       <body
         suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} min-h-full font-sans antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${caveat.variable} ${kalam.variable} ${patrickHand.variable} ${shadowsIntoLight.variable} min-h-full font-sans antialiased`}
       >
         <SiteStructuredData />
         <ThemeProvider

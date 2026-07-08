@@ -21,10 +21,16 @@ export type NoteSummary = {
   id: string;
   title: string;
   content: string;
+  icon: string | null;
+  coverImage: string | null;
   isPublic: boolean;
   isFavorite: boolean;
   shareSlug: string | null;
   folderId: string | null;
+  isSecret: boolean;
+  secretSalt: string | null;
+  secretIv: string | null;
+  secretVerifier: string | null;
   updatedAt: Date;
   tags: NoteTagRelation[];
 };
@@ -36,7 +42,9 @@ export type NoteDetail = NoteSummary & {
 export type SidebarNoteSummary = {
   id: string;
   title: string;
+  icon: string | null;
   isFavorite: boolean;
+  isSecret: boolean;
 };
 
 export type SidebarData = {
@@ -51,6 +59,7 @@ export type NoteSearchResult = {
   title: string;
   excerpt: string;
   isFavorite: boolean;
+  isSecret: boolean;
   folderName: string | null;
   updatedAt: string;
 };

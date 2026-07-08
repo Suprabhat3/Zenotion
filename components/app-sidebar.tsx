@@ -7,6 +7,7 @@ import {
   FileText,
   Folder,
   Hash,
+  Lock,
   PanelLeft,
   PanelLeftClose,
   Plus,
@@ -105,19 +106,36 @@ const newNoteButtonClassName =
 function SidebarNoteLink({
   noteId,
   title,
+  icon,
   isFavorite,
+  isSecret,
   active,
   collapsed,
   onNavigate,
 }: {
   noteId: string;
   title: string;
+  icon: string | null;
   isFavorite: boolean;
+  isSecret: boolean;
   active: boolean;
   collapsed?: boolean;
   onNavigate?: () => void;
 }) {
   const label = title || "Untitled";
+
+  // The note's emoji icon wins; otherwise fall back to star/file glyphs.
+  const glyph = isSecret ? (
+    <Lock className="h-4 w-4 shrink-0 text-muted-foreground" />
+  ) : icon ? (
+    <span className="w-4 shrink-0 text-center text-sm leading-none" aria-hidden>
+      {icon}
+    </span>
+  ) : isFavorite ? (
+    <Star className="h-4 w-4 shrink-0 fill-amber-400 text-amber-400" />
+  ) : (
+    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+  );
 
   if (collapsed) {
     return (
@@ -127,11 +145,7 @@ function SidebarNoteLink({
         active={active}
         onNavigate={onNavigate}
       >
-        {isFavorite ? (
-          <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-        ) : (
-          <FileText className="h-4 w-4 text-muted-foreground" />
-        )}
+        {glyph}
       </SidebarIconButton>
     );
   }
@@ -145,11 +159,7 @@ function SidebarNoteLink({
         active && "clay-nav-item-active",
       )}
     >
-      {isFavorite ? (
-        <Star className="h-4 w-4 shrink-0 fill-amber-400 text-amber-400" />
-      ) : (
-        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-      )}
+      {glyph}
       <span className="truncate">{label}</span>
     </Link>
   );
@@ -274,7 +284,9 @@ export function AppSidebar({
                   <SidebarNoteLink
                     noteId={note.id}
                     title={note.title}
+                    icon={note.icon}
                     isFavorite={note.isFavorite}
+                    isSecret={note.isSecret}
                     active={pathname === `/notes/${note.id}`}
                     collapsed={collapsed}
                     onNavigate={handleNavigate}

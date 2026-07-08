@@ -22,6 +22,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+export const AI_PALETTE_OPEN_EVENT = "zenotion-ai-palette-open";
+
+/** Opens the AI command palette from anywhere (slash menu, shortcuts…). */
+export function openAiPalette(): void {
+  window.dispatchEvent(new Event(AI_PALETTE_OPEN_EVENT));
+}
+
 const ACTION_LABELS: Record<AiAction, string> = {
   summarize: "Summarize",
   rewrite: "Rewrite",
@@ -158,8 +165,15 @@ export function AiCommandPalette({ content, onApply }: AiCommandPaletteProps) {
         handleOpenChange(!open);
       }
     }
+    function onOpenEvent() {
+      handleOpenChange(true);
+    }
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener(AI_PALETTE_OPEN_EVENT, onOpenEvent);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener(AI_PALETTE_OPEN_EVENT, onOpenEvent);
+    };
   }, [handleOpenChange, open]);
 
   function handleSelect(action: AiAction) {

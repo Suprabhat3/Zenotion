@@ -6,26 +6,34 @@ import { parseOrThrow, updateNoteSchema } from "@/lib/validators";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
+const noteDetailSelect = {
+  id: true,
+  title: true,
+  content: true,
+  icon: true,
+  coverImage: true,
+  isPublic: true,
+  isFavorite: true,
+  shareSlug: true,
+  folderId: true,
+  isSecret: true,
+  secretSalt: true,
+  secretIv: true,
+  secretVerifier: true,
+  createdAt: true,
+  updatedAt: true,
+  tags: {
+    select: {
+      tagId: true,
+      tag: { select: { id: true, name: true, color: true } },
+    },
+  },
+} as const;
+
 async function getOwnedNote(userId: string, noteId: string) {
   const note = await prisma.note.findFirst({
     where: { id: noteId, userId },
-    select: {
-      id: true,
-      title: true,
-      content: true,
-      isPublic: true,
-      isFavorite: true,
-      shareSlug: true,
-      folderId: true,
-      createdAt: true,
-      updatedAt: true,
-      tags: {
-        select: {
-          tagId: true,
-          tag: { select: { id: true, name: true, color: true } },
-        },
-      },
-    },
+    select: noteDetailSelect,
   });
   if (!note) {
     throw new ApiError("NOT_FOUND", "Note not found.");
@@ -55,10 +63,34 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const existing = await prisma.note.findFirst({
       where: { id, userId: user.id },
-      select: { title: true, content: true },
+      select: { title: true, content: true, isSecret: true },
     });
     if (!existing) {
       throw new ApiError("NOT_FOUND", "Note not found.");
+    }
+
+    if (existing.isSecret) {
+      // Secret-note saves must be ciphertext with a fresh IV; the real title
+      // lives inside the encrypted payload, so plaintext title writes are
+      // rejected. Version snapshots are skipped entirely — the server keeps
+      // no history (plaintext or ciphertext) of a secret note.
+      if (input.title !== undefined) {
+        throw new ApiError(
+          "VALIDATION_ERROR",
+          "The title of a secret note is part of its encrypted content.",
+        );
+      }
+      if (input.content !== undefined && !input.secretIv) {
+        throw new ApiError(
+          "VALIDATION_ERROR",
+          "Secret note saves must include the encryption IV.",
+        );
+      }
+    } else if (input.secretIv !== undefined) {
+      throw new ApiError(
+        "VALIDATION_ERROR",
+        "This note is not a secret note.",
+      );
     }
 
     const contentChanging =
@@ -66,7 +98,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const titleChanging =
       input.title !== undefined && input.title !== existing.title;
 
-    if (contentChanging || titleChanging) {
+    if (!existing.isSecret && (contentChanging || titleChanging)) {
       await createNoteVersionSnapshot({
         noteId: id,
         title: existing.title,
@@ -104,6 +136,8 @@ export async function PATCH(request: Request, context: RouteContext) {
     const hasNoteFields =
       input.title !== undefined ||
       input.content !== undefined ||
+      input.icon !== undefined ||
+      input.coverImage !== undefined ||
       input.folderId !== undefined;
 
     const note = hasNoteFields
@@ -112,25 +146,14 @@ export async function PATCH(request: Request, context: RouteContext) {
           data: {
             ...(input.title !== undefined ? { title: input.title } : {}),
             ...(input.content !== undefined ? { content: input.content } : {}),
+            ...(input.secretIv !== undefined ? { secretIv: input.secretIv } : {}),
+            ...(input.icon !== undefined ? { icon: input.icon } : {}),
+            ...(input.coverImage !== undefined
+              ? { coverImage: input.coverImage }
+              : {}),
             ...(input.folderId !== undefined ? { folderId: input.folderId } : {}),
           },
-          select: {
-            id: true,
-            title: true,
-            content: true,
-            isPublic: true,
-            isFavorite: true,
-            shareSlug: true,
-            folderId: true,
-            createdAt: true,
-            updatedAt: true,
-            tags: {
-              select: {
-                tagId: true,
-                tag: { select: { id: true, name: true, color: true } },
-              },
-            },
-          },
+          select: noteDetailSelect,
         })
       : await getOwnedNote(user.id, id);
 
@@ -146,7 +169,14 @@ export async function DELETE(_request: Request, context: RouteContext) {
     const { id } = await context.params;
     await getOwnedNote(user.id, id);
 
-    await prisma.note.delete({ where: { id } });
+    // Deleting the secret note frees the user's secret-note credit.
+    await prisma.$transaction([
+      prisma.user.updateMany({
+        where: { id: user.id, secretNoteId: id },
+        data: { secretNoteId: null },
+      }),
+      prisma.note.delete({ where: { id } }),
+    ]);
 
     return ok({ id }, { message: "Note deleted." });
   } catch (error) {

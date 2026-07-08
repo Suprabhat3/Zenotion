@@ -159,6 +159,25 @@ export function AuthForm({ mode }: { mode: Mode }) {
             {isSignup ? "Create account" : "Sign in"}
           </Button>
         </form>
+
+        <p className="text-center text-xs leading-relaxed text-muted-foreground">
+          By {isSignup ? "creating an account" : "signing in"}, you agree to
+          our{" "}
+          <Link
+            href="/terms"
+            className="link-underline-grow font-medium text-foreground"
+          >
+            Terms &amp; Conditions
+          </Link>{" "}
+          and{" "}
+          <Link
+            href="/privacy"
+            className="link-underline-grow font-medium text-foreground"
+          >
+            Privacy Policy
+          </Link>
+          .
+        </p>
       </CardContent>
 
       <CardFooter className="justify-center border-t border-border/60 pt-6 text-sm text-muted-foreground">

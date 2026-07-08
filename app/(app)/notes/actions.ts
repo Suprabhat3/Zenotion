@@ -1,5 +1,6 @@
 "use server";
 
+import { timingSafeEqual } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
@@ -10,6 +11,7 @@ import {
   createNoteSchema,
   folderIdSchema,
   folderSchema,
+  markNoteSecretSchema,
   moveNoteSchema,
   noteIdSchema,
   parseOrThrow,
@@ -20,8 +22,19 @@ import {
   tagSchema,
   toggleNoteFavoriteSchema,
   toggleNotePublicSchema,
+  unmarkNoteSecretSchema,
   updateNoteSchema,
 } from "@/lib/validators";
+
+const SECRET_NOTE_TITLE = "Secret note";
+
+/** Constant-time comparison of the client-supplied passphrase verifier. */
+function verifierMatches(stored: string | null, provided: string): boolean {
+  if (!stored) return false;
+  const a = Buffer.from(stored);
+  const b = Buffer.from(provided);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 function revalidateApp() {
   revalidatePath("/dashboard");
@@ -73,6 +86,19 @@ export async function createNote(formData: FormData) {
   redirect(`/notes/${note.id}`);
 }
 
+async function assertNotSecret(userId: string, noteId: string) {
+  const note = await prisma.note.findFirst({
+    where: { id: noteId, userId },
+    select: { isSecret: true },
+  });
+  if (!note) {
+    throw new Error("Note not found.");
+  }
+  if (note.isSecret) {
+    throw new Error("This note is encrypted. Unlock it in the editor to change it.");
+  }
+}
+
 export async function renameNote(formData: FormData) {
   const user = await requireUser();
   const input = parseOrThrow(renameNoteSchema, {
@@ -81,6 +107,7 @@ export async function renameNote(formData: FormData) {
   });
 
   await assertNoteOwnership(user.id, input.noteId);
+  await assertNotSecret(user.id, input.noteId);
 
   await prisma.note.update({
     where: { id: input.noteId },
@@ -102,10 +129,11 @@ export async function updateNoteContent(formData: FormData) {
   });
 
   await assertNoteOwnership(user.id, noteId);
+  await assertNotSecret(user.id, noteId);
 
   await prisma.note.update({
     where: { id: noteId },
-    data: input,
+    data: { title: input.title, content: input.content },
   });
 
   revalidateApp();
@@ -142,10 +170,13 @@ export async function toggleNotePublic(
 
   const note = await prisma.note.findFirst({
     where: { id: input.noteId, userId: user.id },
-    select: { id: true, shareSlug: true },
+    select: { id: true, shareSlug: true, isSecret: true },
   });
   if (!note) {
     throw new Error("Note not found.");
+  }
+  if (note.isSecret) {
+    throw new Error("Secret notes cannot be shared.");
   }
 
   const shareSlug =
@@ -197,10 +228,128 @@ export async function deleteNote(formData: FormData) {
 
   await assertNoteOwnership(user.id, noteId);
 
-  await prisma.note.delete({ where: { id: noteId } });
+  // Deleting the secret note frees the user's secret-note credit.
+  await prisma.$transaction([
+    prisma.user.updateMany({
+      where: { id: user.id, secretNoteId: noteId },
+      data: { secretNoteId: null },
+    }),
+    prisma.note.delete({ where: { id: noteId } }),
+  ]);
 
   revalidateApp();
   redirect("/dashboard");
+}
+
+/**
+ * Mark a note as the user's single secret note. The client encrypts
+ * `{ title, content }` with a passphrase-derived key before calling this;
+ * the server never sees the plaintext or the passphrase.
+ */
+export async function markNoteSecret(formData: FormData) {
+  const user = await requireUser();
+  const input = parseOrThrow(markNoteSecretSchema, {
+    noteId: formData.get("noteId"),
+    ciphertext: formData.get("ciphertext"),
+    iv: formData.get("iv"),
+    salt: formData.get("salt"),
+    verifier: formData.get("verifier"),
+  });
+
+  const [account, note] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: user.id },
+      select: { secretNoteId: true },
+    }),
+    prisma.note.findFirst({
+      where: { id: input.noteId, userId: user.id },
+      select: { id: true, isSecret: true },
+    }),
+  ]);
+  if (!note) {
+    throw new Error("Note not found.");
+  }
+  if (account?.secretNoteId) {
+    throw new Error(
+      "You have already used your secret-note credit. Convert your current secret note back to a normal note first.",
+    );
+  }
+  if (note.isSecret) {
+    throw new Error("This note is already secret.");
+  }
+
+  await prisma.$transaction([
+    // Plaintext version history would defeat the encryption — remove it.
+    prisma.noteVersion.deleteMany({ where: { noteId: input.noteId } }),
+    prisma.note.update({
+      where: { id: input.noteId },
+      data: {
+        isSecret: true,
+        title: SECRET_NOTE_TITLE,
+        content: input.ciphertext,
+        secretSalt: input.salt,
+        secretIv: input.iv,
+        secretVerifier: input.verifier,
+        // A secret note can never stay publicly shared.
+        isPublic: false,
+        shareSlug: null,
+      },
+    }),
+    prisma.user.update({
+      where: { id: user.id },
+      data: { secretNoteId: input.noteId },
+    }),
+  ]);
+
+  revalidateApp();
+  revalidatePath(`/notes/${input.noteId}`);
+}
+
+/**
+ * Convert the secret note back to a normal note, freeing the credit. The
+ * client decrypts locally and sends the plaintext plus the passphrase
+ * verifier as proof it knew the passphrase.
+ */
+export async function unmarkNoteSecret(formData: FormData) {
+  const user = await requireUser();
+  const input = parseOrThrow(unmarkNoteSecretSchema, {
+    noteId: formData.get("noteId"),
+    verifier: formData.get("verifier"),
+    title: formData.get("title"),
+    content: formData.get("content") ?? "",
+  });
+
+  const note = await prisma.note.findFirst({
+    where: { id: input.noteId, userId: user.id },
+    select: { isSecret: true, secretVerifier: true },
+  });
+  if (!note || !note.isSecret) {
+    throw new Error("Secret note not found.");
+  }
+  if (!verifierMatches(note.secretVerifier, input.verifier)) {
+    throw new Error("Wrong password.");
+  }
+
+  await prisma.$transaction([
+    prisma.note.update({
+      where: { id: input.noteId },
+      data: {
+        isSecret: false,
+        title: input.title,
+        content: input.content,
+        secretSalt: null,
+        secretIv: null,
+        secretVerifier: null,
+      },
+    }),
+    prisma.user.update({
+      where: { id: user.id },
+      data: { secretNoteId: null },
+    }),
+  ]);
+
+  revalidateApp();
+  revalidatePath(`/notes/${input.noteId}`);
 }
 
 export async function createFolder(formData: FormData) {
@@ -328,7 +477,7 @@ export async function copySharedNote(formData: FormData): Promise<{ id: string }
 
   const source = await prisma.note.findFirst({
     where: { shareSlug, isPublic: true },
-    select: { title: true, content: true },
+    select: { title: true, content: true, icon: true, coverImage: true },
   });
   if (!source) {
     throw new Error("Shared note not found or is no longer public.");
@@ -338,6 +487,8 @@ export async function copySharedNote(formData: FormData): Promise<{ id: string }
     data: {
       title: `${source.title} (copy)`,
       content: source.content,
+      icon: source.icon,
+      coverImage: source.coverImage,
       userId: user.id,
     },
     select: { id: true },

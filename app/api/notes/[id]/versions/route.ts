@@ -7,10 +7,16 @@ type RouteContext = { params: Promise<{ id: string }> };
 async function getOwnedNoteId(userId: string, noteId: string) {
   const note = await prisma.note.findFirst({
     where: { id: noteId, userId },
-    select: { id: true },
+    select: { id: true, isSecret: true },
   });
   if (!note) {
     throw new ApiError("NOT_FOUND", "Note not found.");
+  }
+  if (note.isSecret) {
+    throw new ApiError(
+      "FORBIDDEN",
+      "Secret notes do not keep version history.",
+    );
   }
 }
 

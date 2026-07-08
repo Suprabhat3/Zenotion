@@ -12,10 +12,16 @@ export async function POST(_request: Request, context: RouteContext) {
 
     const note = await prisma.note.findFirst({
       where: { id, userId: user.id },
-      select: { id: true, title: true, content: true },
+      select: { id: true, title: true, content: true, isSecret: true },
     });
     if (!note) {
       throw new ApiError("NOT_FOUND", "Note not found.");
+    }
+    if (note.isSecret) {
+      throw new ApiError(
+        "FORBIDDEN",
+        "Secret notes do not keep version history.",
+      );
     }
 
     const version = await prisma.noteVersion.findFirst({
@@ -44,6 +50,8 @@ export async function POST(_request: Request, context: RouteContext) {
         id: true,
         title: true,
         content: true,
+        icon: true,
+        coverImage: true,
         isPublic: true,
         isFavorite: true,
         shareSlug: true,

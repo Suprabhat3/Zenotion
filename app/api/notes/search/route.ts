@@ -44,8 +44,10 @@ export async function GET(request: NextRequest) {
     const results: NoteSearchResult[] = notes.map((note) => ({
       id: note.id,
       title: note.title,
-      excerpt: buildExcerpt(note.content, q),
+      // A secret note's content is ciphertext — never surface it as an excerpt.
+      excerpt: note.isSecret ? "🔒 Encrypted note" : buildExcerpt(note.content, q),
       isFavorite: note.isFavorite,
+      isSecret: note.isSecret,
       folderName: note.folder?.name ?? null,
       updatedAt: note.updatedAt.toISOString(),
     }));
