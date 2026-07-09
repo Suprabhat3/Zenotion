@@ -99,6 +99,9 @@ export function InlineAiToolbar({
       }
 
       setLoadingAction(action);
+      setPreviewAction(action);
+      setPreviewText("");
+      setPreviewOpen(true);
       try {
         const result = await requestAiCompletion(aiConfig, {
           action,
@@ -106,9 +109,8 @@ export function InlineAiToolbar({
           instruction: extraInstruction,
         });
         setPreviewText(result.result);
-        setPreviewAction(action);
-        setPreviewOpen(true);
       } catch (err) {
+        setPreviewOpen(false);
         toast.error(err instanceof Error ? err.message : "AI request failed.");
       } finally {
         setLoadingAction(null);
@@ -168,22 +170,50 @@ export function InlineAiToolbar({
   }, [selection, previewOpen, menuOpen, instructionOpen, onDismiss]);
 
   const previewDialog = (
-    <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+    <Dialog
+      open={previewOpen}
+      onOpenChange={(open) => {
+        if (!open && loadingAction !== null) return;
+        setPreviewOpen(open);
+      }}
+    >
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>AI preview</DialogTitle>
-          <DialogDescription>Review the suggestion before applying.</DialogDescription>
+          <DialogDescription>
+            {loadingAction
+              ? "Generating a suggestion for your selection…"
+              : "Review the suggestion before applying."}
+          </DialogDescription>
         </DialogHeader>
-        <Textarea
-          value={previewText}
-          readOnly
-          className="max-h-64 min-h-32 resize-none font-mono text-sm"
-        />
+        {loadingAction ? (
+          <div
+            className="flex min-h-32 flex-col items-center justify-center gap-3 rounded-md border border-dashed bg-muted/30 px-6 py-10"
+            aria-live="polite"
+            aria-busy="true"
+          >
+            <Loader2 className="h-7 w-7 animate-spin text-primary" />
+            <p className="text-center text-sm text-muted-foreground">
+              AI is working on your selection…
+            </p>
+          </div>
+        ) : (
+          <Textarea
+            value={previewText}
+            readOnly
+            className="max-h-64 min-h-32 resize-none font-mono text-sm"
+          />
+        )}
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button type="button" variant="ghost" onClick={() => setPreviewOpen(false)}>
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={loadingAction !== null}
+            onClick={() => setPreviewOpen(false)}
+          >
             Cancel
           </Button>
-          <Button type="button" onClick={handleApplyPreview}>
+          <Button type="button" onClick={handleApplyPreview} disabled={loadingAction !== null}>
             Replace selection
           </Button>
           {previewAction && (
@@ -193,7 +223,14 @@ export function InlineAiToolbar({
               disabled={loadingAction !== null}
               onClick={() => void runAction(previewAction, instruction.trim() || undefined)}
             >
-              Try again
+              {loadingAction === previewAction ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Trying again…
+                </>
+              ) : (
+                "Try again"
+              )}
             </Button>
           )}
         </DialogFooter>
@@ -240,9 +277,19 @@ export function InlineAiToolbar({
             </Button>
             <Button
               type="submit"
-              disabled={pendingAction === "custom" && !instruction.trim()}
+              disabled={
+                loadingAction !== null ||
+                (pendingAction === "custom" && !instruction.trim())
+              }
             >
-              Run
+              {loadingAction !== null ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Running…
+                </>
+              ) : (
+                "Run"
+              )}
             </Button>
           </DialogFooter>
         </form>
@@ -297,7 +344,11 @@ export function InlineAiToolbar({
           disabled={loadingAction !== null}
           onClick={() => handleSelectAction("custom")}
         >
-          <MessageSquarePlus className="h-3.5 w-3.5" />
+          {loadingAction === "custom" ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <MessageSquarePlus className="h-3.5 w-3.5" />
+          )}
           Custom prompt
         </Button>
 

@@ -966,10 +966,12 @@ body {
   border: 1px solid var(--border);
 }
 
-/* GFM tables */
+/* GFM tables — size to content so wide tables scroll instead of crushing columns */
 .prose-note .markdown-table-wrap {
   margin: 1rem 0;
+  max-width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--card);
@@ -979,8 +981,10 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 .prose-note .markdown-table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
   font-size: 0.875rem;
   line-height: 1.5;
 }
@@ -994,12 +998,18 @@ body {
   color: var(--foreground);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
+  min-width: 7rem;
 }
 .prose-note .markdown-table-td {
   padding: 0.6rem 1rem;
   border-bottom: 1px solid var(--border);
   color: var(--foreground);
   vertical-align: top;
+  min-width: 7rem;
+  max-width: 28rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .prose-note .markdown-table-body .markdown-table-row:last-child .markdown-table-td {
   border-bottom: none;
@@ -1043,8 +1053,25 @@ body {
   color: #60a5fa;
 }
 
-/* Code blocks — copy on hover only */
-.prose-note .code-block-group .cm-copy,
+/* Code blocks — square edges, real left padding (overrides .prose-note pre code { padding: 0 }) */
+.prose-note .code-block-group {
+  max-width: 100%;
+  border-radius: 0;
+}
+.prose-note .code-block-group .code-block-pre {
+  margin: 0 !important;
+  padding: 0 1rem 1rem 1rem !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  overflow-x: auto;
+}
+.prose-note .code-block-group .code-block-pre code,
+.prose-note .code-block-group .hljs {
+  display: block;
+  padding: 0 !important;
+  background: transparent !important;
+  tab-size: 2;
+}
 .prose-note .code-block-group button {
   pointer-events: auto;
 }
@@ -1285,8 +1312,12 @@ body {
 /* Print / "Save as PDF": portaled #note-print-area is the only body child shown. */
 @media print {
   @page {
-    margin: 0;
+    margin: 1.75cm 2cm 2.25cm;
     size: A4;
+  }
+
+  @page :first {
+    margin-top: 1cm;
   }
 
   html,
@@ -1311,9 +1342,9 @@ body {
     position: static !important;
     box-sizing: border-box !important;
     width: 100% !important;
-    min-height: 100vh !important;
+    min-height: auto !important;
     margin: 0 !important;
-    padding: 1.5cm 2cm !important;
+    padding: 0 !important;
     background: #fff !important;
     background-color: #fff !important;
     border: none !important;
@@ -1323,6 +1354,8 @@ body {
     font-family: var(--font-geist-sans), system-ui, sans-serif;
     font-size: 11pt;
     line-height: 1.65;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
     print-color-adjust: economy;
     -webkit-print-color-adjust: economy;
   }
@@ -1333,19 +1366,130 @@ body {
     -webkit-backdrop-filter: none !important;
   }
 
-  #note-print-area .hljs,
-  #note-print-area pre,
-  #note-print-area pre code,
-  #note-print-area code.hljs {
+  #note-print-area pre:not(.print-code-block-pre),
+  #note-print-area pre:not(.print-code-block-pre) code {
     background: transparent !important;
     background-color: transparent !important;
   }
 
-  #note-print-area .print-code-block {
-    background: #f6f8fa !important;
-    background-color: #f6f8fa !important;
+  #note-print-area .print-code-block,
+  #note-print-area .print-code-block * {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
+  }
+
+  #note-print-area .print-code-block {
+    background: #0d1117 !important;
+    background-color: #0d1117 !important;
+    border-color: #30363d !important;
+  }
+
+  #note-print-area .print-code-block-label {
+    margin: 0;
+    padding: 0.75rem 1rem 0;
+    border: none;
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.4;
+  }
+
+  #note-print-area .print-code-block-pre {
+    padding: 0.5rem 1rem 1rem !important;
+    margin: 0 !important;
+    background: #0d1117 !important;
+    background-color: #0d1117 !important;
+    border: none !important;
+  }
+
+  #note-print-area .print-code-block .hljs {
+    padding: 0 !important;
+    color: #c9d1d9 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+
+  /* GitHub Dark syntax — explicit colors so print preview keeps contrast. */
+  #note-print-area .print-code-block .hljs-doctag,
+  #note-print-area .print-code-block .hljs-keyword,
+  #note-print-area .print-code-block .hljs-meta .hljs-keyword,
+  #note-print-area .print-code-block .hljs-template-tag,
+  #note-print-area .print-code-block .hljs-template-variable,
+  #note-print-area .print-code-block .hljs-type,
+  #note-print-area .print-code-block .hljs-variable.language_ {
+    color: #ff7b72 !important;
+  }
+
+  #note-print-area .print-code-block .hljs-title,
+  #note-print-area .print-code-block .hljs-title.class_,
+  #note-print-area .print-code-block .hljs-title.class_.inherited__,
+  #note-print-area .print-code-block .hljs-title.function_ {
+    color: #d2a8ff !important;
+  }
+
+  #note-print-area .print-code-block .hljs-attr,
+  #note-print-area .print-code-block .hljs-attribute,
+  #note-print-area .print-code-block .hljs-literal,
+  #note-print-area .print-code-block .hljs-meta,
+  #note-print-area .print-code-block .hljs-number,
+  #note-print-area .print-code-block .hljs-operator,
+  #note-print-area .print-code-block .hljs-selector-attr,
+  #note-print-area .print-code-block .hljs-selector-class,
+  #note-print-area .print-code-block .hljs-selector-id,
+  #note-print-area .print-code-block .hljs-variable {
+    color: #79c0ff !important;
+  }
+
+  #note-print-area .print-code-block .hljs-meta .hljs-string,
+  #note-print-area .print-code-block .hljs-regexp,
+  #note-print-area .print-code-block .hljs-string {
+    color: #a5d6ff !important;
+  }
+
+  #note-print-area .print-code-block .hljs-built_in,
+  #note-print-area .print-code-block .hljs-symbol {
+    color: #ffa657 !important;
+  }
+
+  #note-print-area .print-code-block .hljs-code,
+  #note-print-area .print-code-block .hljs-comment,
+  #note-print-area .print-code-block .hljs-formula {
+    color: #8b949e !important;
+  }
+
+  #note-print-area .print-code-block .hljs-name,
+  #note-print-area .print-code-block .hljs-quote,
+  #note-print-area .print-code-block .hljs-selector-pseudo,
+  #note-print-area .print-code-block .hljs-selector-tag {
+    color: #7ee787 !important;
+  }
+
+  #note-print-area .print-code-block .hljs-subst,
+  #note-print-area .print-code-block .hljs-emphasis,
+  #note-print-area .print-code-block .hljs-strong {
+    color: #c9d1d9 !important;
+  }
+
+  #note-print-area .print-code-block .hljs-section {
+    color: #1f6feb !important;
+    font-weight: 700;
+  }
+
+  #note-print-area .print-code-block .hljs-bullet {
+    color: #f2cc60 !important;
+  }
+
+  #note-print-area .print-code-block .hljs-addition {
+    color: #aff5b4 !important;
+    background-color: #033a16 !important;
+  }
+
+  #note-print-area .print-code-block .hljs-deletion {
+    color: #ffdcd7 !important;
+    background-color: #67060c !important;
   }
 
   .note-print-document {
@@ -1357,15 +1501,23 @@ body {
     margin-bottom: 2rem;
     padding-bottom: 1.25rem;
     border-bottom: 1px solid #e5e5e5;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .note-print-brand {
-    margin: 0 0 0.75rem;
-    font-size: 9pt;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #737373;
+    margin: 0 0 1.5rem;
+    font-size: 11pt;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    color: #525252;
+    line-height: 1.5;
+  }
+
+  .note-print-brand-name {
+    font-weight: 700;
+    color: #171717;
   }
 
   .note-print-title {
@@ -1396,30 +1548,81 @@ body {
     --card: #ffffff;
     --accent: #f5f5f5;
     color: #171717;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+
+  /* Keep headings with the block that follows them. */
+  #note-print-area .prose-note-print .print-heading {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  #note-print-area .prose-note-print .print-heading + :is(
+    p,
+    ul,
+    ol,
+    blockquote,
+    pre,
+    .print-code-block,
+    .markdown-table-wrap,
+    .mermaid-diagram,
+    hr,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6
+  ) {
+    break-before: avoid;
+    page-break-before: avoid;
   }
 
   #note-print-area .prose-note-print h1 {
     font-size: 20pt;
     margin: 1.75rem 0 0.5rem;
-    page-break-after: avoid;
   }
 
   #note-print-area .prose-note-print h2 {
     font-size: 16pt;
     margin: 1.5rem 0 0.45rem;
-    page-break-after: avoid;
   }
 
   #note-print-area .prose-note-print h3 {
     font-size: 13pt;
     margin: 1.25rem 0 0.35rem;
+  }
+
+  #note-print-area .prose-note-print h4,
+  #note-print-area .prose-note-print h5,
+  #note-print-area .prose-note-print h6 {
+    break-after: avoid;
     page-break-after: avoid;
   }
 
   #note-print-area .prose-note-print p,
   #note-print-area .prose-note-print li {
-    orphans: 3;
-    widows: 3;
+    orphans: 4;
+    widows: 4;
+  }
+
+  #note-print-area .prose-note-print li {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  #note-print-area .prose-note-print blockquote,
+  #note-print-area .prose-note-print hr,
+  #note-print-area .prose-note-print .print-avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  #note-print-area .prose-note-print .markdown-inline-code,
+  #note-print-area .prose-note-print code:not(.hljs) {
+    overflow-wrap: anywhere;
+    word-break: break-all;
   }
 
   #note-print-area .prose-note-print a,
@@ -1475,6 +1678,16 @@ body {
     max-width: 100%;
     border-color: #e5e5e5;
     box-shadow: none;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Inline badge-style images stay on one line when possible. */
+  #note-print-area .prose-note-print p .markdown-image,
+  #note-print-area .prose-note-print li .markdown-image {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0.15rem 0.35rem 0.15rem 0;
   }
 
   #note-print-area .prose-note-print .mermaid-diagram {
@@ -1487,72 +1700,16 @@ body {
     display: none !important;
   }
 
-  /* GitHub-light syntax colors for print code blocks. */
-  #note-print-area .hljs {
-    color: #24292e;
-    background: transparent;
-  }
-
-  #note-print-area .hljs-doctag,
-  #note-print-area .hljs-keyword,
-  #note-print-area .hljs-meta .hljs-keyword,
-  #note-print-area .hljs-template-tag,
-  #note-print-area .hljs-template-variable,
-  #note-print-area .hljs-type,
-  #note-print-area .hljs-variable.language_ {
-    color: #d73a49;
-  }
-
-  #note-print-area .hljs-title,
-  #note-print-area .hljs-title.class_,
-  #note-print-area .hljs-title.class_.inherited__,
-  #note-print-area .hljs-title.function_ {
-    color: #6f42c1;
-  }
-
-  #note-print-area .hljs-attr,
-  #note-print-area .hljs-attribute,
-  #note-print-area .hljs-literal,
-  #note-print-area .hljs-meta,
-  #note-print-area .hljs-number,
-  #note-print-area .hljs-operator,
-  #note-print-area .hljs-selector-attr,
-  #note-print-area .hljs-selector-class,
-  #note-print-area .hljs-selector-id,
-  #note-print-area .hljs-variable {
-    color: #005cc5;
-  }
-
-  #note-print-area .hljs-meta .hljs-string,
-  #note-print-area .hljs-regexp,
-  #note-print-area .hljs-string {
-    color: #032f62;
-  }
-
-  #note-print-area .hljs-built_in,
-  #note-print-area .hljs-symbol {
-    color: #e36209;
-  }
-
-  #note-print-area .hljs-code,
-  #note-print-area .hljs-comment,
-  #note-print-area .hljs-formula {
-    color: #6a737d;
-  }
-
-  #note-print-area .hljs-name,
-  #note-print-area .hljs-quote,
-  #note-print-area .hljs-selector-pseudo,
-  #note-print-area .hljs-selector-tag {
-    color: #22863a;
-  }
-
   #note-print-area .print-code-block,
-  #note-print-area pre {
+  #note-print-area pre,
+  #note-print-area .print-avoid-break {
+    break-inside: avoid;
     page-break-inside: avoid;
   }
 
-  #note-print-area table {
+  #note-print-area table,
+  #note-print-area .markdown-table-wrap {
+    break-inside: avoid;
     page-break-inside: avoid;
   }
 }

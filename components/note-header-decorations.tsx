@@ -85,7 +85,7 @@ export function NoteHeaderDecorations({
       {/* Matches the editor's centered column so icon/title/content line up.
           The icon itself renders beside the title (in the editor); here we
           only offer the add buttons for whichever decoration is missing. */}
-      <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         {(!icon || !coverImage) && (
           <div className="flex items-center gap-1 pt-2">
             {!icon && (

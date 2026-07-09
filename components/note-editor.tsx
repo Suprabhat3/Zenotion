@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { siteConfig } from "@/lib/site";
 import type { AiAction } from "@/lib/validators";
 import type { ApiResponse } from "@/lib/api";
 import type { NoteDetail, TagSummary, EditorSelection } from "@/lib/types";
@@ -483,7 +484,10 @@ export function NoteEditor({
     <div id="note-print-area" aria-hidden="true">
       <article className="note-print-document">
         <header className="note-print-header">
-          <p className="note-print-brand">Zenotion</p>
+          <p className="note-print-brand">
+            {siteConfig.printBranding}{" "}
+            <strong className="note-print-brand-name">{siteConfig.name}</strong>
+          </p>
           <h1 className="note-print-title">{title.trim() || "Untitled"}</h1>
           <p className="note-print-meta">
             Exported{" "}
@@ -722,7 +726,7 @@ export function NoteEditor({
           <div className="note-editor-body min-h-0 flex-1">
             {richEditor && (
               <div className="note-editor-format-bar px-2 sm:px-4">
-                <div className="mx-auto w-full max-w-3xl">
+                <div className="mx-auto w-full max-w-6xl">
                   <RichEditorToolbar
                     editor={richEditor}
                     className="border-b-0 bg-transparent"
@@ -737,7 +741,7 @@ export function NoteEditor({
               onIconChange={handleIconChange}
               onCoverChange={handleCoverChange}
             />
-            <div className="mx-auto w-full max-w-3xl px-2 sm:px-4">
+            <div className="mx-auto w-full max-w-6xl px-2 sm:px-4">
               <div className="flex items-center gap-2 px-2 pt-2">
                 {icon && (
                   <NoteIconPicker icon={icon} onSelect={handleIconChange}>
@@ -759,7 +763,7 @@ export function NoteEditor({
                 />
               </div>
             </div>
-            <div className="mx-auto w-full max-w-3xl px-2 pb-8 pt-1 sm:px-4">
+            <div className="mx-auto w-full max-w-6xl px-2 pb-8 pt-1 sm:px-4">
               <RichTextEditor
                 key={`rich-${note.id}-${richKey}`}
                 content={content}

@@ -18,6 +18,8 @@ export const siteConfig = {
   title: "Zenotion — AI Notes for Developers",
   description:
     "Markdown-first note management for developers. Organize specs, RFCs, and daily notes with folders, tags, autosave, public sharing, and AI assistance — free forever.",
+  /** Prefix shown on the first page of exported PDFs / print output. */
+  printBranding: "Markdown notes and other things created by",
   url: getSiteUrl(),
   ogImage: {
     path: "/og.webp",

@@ -27,6 +27,57 @@ function extractText(children: ReactNode): string {
   return "";
 }
 
+const LANGUAGE_LABELS: Record<string, string> = {
+  js: "JavaScript",
+  javascript: "JavaScript",
+  jsx: "JSX",
+  ts: "TypeScript",
+  typescript: "TypeScript",
+  tsx: "TSX",
+  py: "Python",
+  python: "Python",
+  rb: "Ruby",
+  ruby: "Ruby",
+  go: "Go",
+  rust: "Rust",
+  rs: "Rust",
+  java: "Java",
+  kotlin: "Kotlin",
+  swift: "Swift",
+  c: "C",
+  cpp: "C++",
+  csharp: "C#",
+  cs: "C#",
+  php: "PHP",
+  sql: "SQL",
+  bash: "Bash",
+  sh: "Shell",
+  shell: "Shell",
+  zsh: "Zsh",
+  powershell: "PowerShell",
+  ps1: "PowerShell",
+  json: "JSON",
+  yaml: "YAML",
+  yml: "YAML",
+  toml: "TOML",
+  xml: "XML",
+  html: "HTML",
+  css: "CSS",
+  scss: "SCSS",
+  md: "Markdown",
+  markdown: "Markdown",
+  graphql: "GraphQL",
+  dockerfile: "Dockerfile",
+  docker: "Dockerfile",
+  text: "Plain text",
+  plaintext: "Plain text",
+};
+
+function formatLanguageLabel(language: string): string {
+  const key = language.toLowerCase();
+  return LANGUAGE_LABELS[key] ?? language.toUpperCase();
+}
+
 function CodeBlock({
   className,
   children,
@@ -38,6 +89,7 @@ function CodeBlock({
 }) {
   const langMatch = /language-([\w-]+)/.exec(className ?? "");
   const language = langMatch?.[1] ?? "text";
+  const languageLabel = formatLanguageLabel(language);
   const code = extractText(children).replace(/\n$/, "");
 
   if (language === "mermaid") {
@@ -46,16 +98,12 @@ function CodeBlock({
 
   if (forPrint) {
     return (
-      <div className="print-code-block not-prose my-4 overflow-hidden rounded-md border border-[#d0d7de] bg-[#f6f8fa]">
-        <div className="flex items-center border-b border-[#d0d7de] bg-[#eef1f4] px-3 py-1.5">
-          <span className="font-mono text-[11px] font-medium uppercase tracking-wide text-[#57606a]">
-            {language}
-          </span>
-        </div>
-        <pre className="m-0! rounded-none! border-0! bg-transparent! p-0!">
+      <div className="print-code-block print-avoid-break not-prose my-4 overflow-hidden rounded-md border border-[#30363d] bg-[#0d1117]">
+        <p className="print-code-block-label">{languageLabel}</p>
+        <pre className="print-code-block-pre m-0! overflow-x-auto rounded-none! border-0! bg-transparent!">
           <code
             className={cn(
-              "hljs block overflow-x-auto px-4 py-3 text-[13px] leading-relaxed",
+              "hljs block text-[13px] leading-relaxed",
               className,
             )}
           >
@@ -67,20 +115,25 @@ function CodeBlock({
   }
 
   return (
-    <div className="code-block-group group relative not-prose my-4 overflow-hidden rounded-lg border border-border bg-[#0d1117]">
-      <div className="flex items-center border-b border-white/10 px-3 py-1.5">
-        <span className="font-mono text-xs text-white/50">{language}</span>
-      </div>
-      <div className="absolute right-2 top-2 z-10 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+    <div className="code-block-group group relative not-prose my-4 overflow-hidden rounded-md border border-border bg-[#0d1117]">
+      <div className="flex items-center justify-between gap-2 px-4 py-2">
+        <span className="font-mono text-[11px] font-medium tracking-wide text-white/55">
+          {languageLabel}
+        </span>
         <CopyButton
           text={code}
           label="Copy code"
           size="icon"
-          className="h-7 w-7 bg-white/10 text-white/80 hover:bg-white/20 hover:text-white"
+          className="h-7 w-7 border-0 bg-transparent text-white/45 opacity-0 shadow-none transition-opacity duration-150 hover:bg-white/10 hover:text-white group-hover:opacity-100 focus-visible:opacity-100"
         />
       </div>
-      <pre className="m-0! rounded-none! border-0! bg-transparent! p-0!">
-        <code className={cn("hljs block overflow-x-auto p-4 text-sm", className)}>
+      <pre className="code-block-pre m-0! overflow-x-auto rounded-none! border-0! bg-transparent! px-4 pb-4 pt-0!">
+        <code
+          className={cn(
+            "hljs block text-[13px] leading-relaxed",
+            className,
+          )}
+        >
           {children}
         </code>
       </pre>
@@ -89,7 +142,27 @@ function CodeBlock({
 }
 
 function createMarkdownComponents(forPrint: boolean): Components {
+  const headingClass = forPrint ? "print-heading" : undefined;
+
   return {
+  h1({ children }) {
+    return <h1 className={headingClass}>{children}</h1>;
+  },
+  h2({ children }) {
+    return <h2 className={headingClass}>{children}</h2>;
+  },
+  h3({ children }) {
+    return <h3 className={headingClass}>{children}</h3>;
+  },
+  h4({ children }) {
+    return <h4 className={headingClass}>{children}</h4>;
+  },
+  h5({ children }) {
+    return <h5 className={headingClass}>{children}</h5>;
+  },
+  h6({ children }) {
+    return <h6 className={headingClass}>{children}</h6>;
+  },
   table({ children }) {
     return (
       <div className="markdown-table-wrap">
@@ -168,7 +241,12 @@ function createMarkdownComponents(forPrint: boolean): Components {
   img({ src, alt }) {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- user-authored markdown images
-      <img src={src} alt={alt ?? ""} className="markdown-image" loading="lazy" />
+      <img
+        src={src}
+        alt={alt ?? ""}
+        className={cn("markdown-image", forPrint && "print-avoid-break")}
+        loading="lazy"
+      />
     );
   },
 };

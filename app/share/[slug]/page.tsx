@@ -39,28 +39,28 @@ export default async function SharePage({ params }: PageProps) {
 
   return (
     <div className="min-h-svh clay-page-bg">
-      <header className="clay-header px-6 py-4">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
+      <header className="clay-header px-4 py-4 sm:px-6">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between">
           <BrandLogo />
           <span className="ambient-glow rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
             Shared note
           </span>
         </div>
       </header>
-      <article className="mx-auto max-w-3xl px-6 py-10">
+      <article className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         {note.coverImage && (
           <div className="public-fade-up mb-6 overflow-hidden rounded-xl clay-surface">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={note.coverImage}
               alt=""
-              className="h-44 w-full object-cover sm:h-56"
+              className="h-44 w-full object-cover sm:h-56 lg:h-64"
             />
           </div>
         )}
         <div className="public-fade-up mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="mb-2 text-3xl font-bold">
+          <div className="min-w-0">
+            <h1 className="mb-2 text-3xl font-bold tracking-tight sm:text-4xl">
               {note.icon && (
                 <span className="mr-2" aria-hidden>
                   {note.icon}
@@ -84,7 +84,7 @@ export default async function SharePage({ params }: PageProps) {
             />
           </div>
         </div>
-        <div className="public-fade-up public-fade-up-delay-1 rounded-xl p-6 sm:p-8 clay-surface clay-lift-subtle clay-lift">
+        <div className="public-fade-up public-fade-up-delay-1 overflow-hidden rounded-xl p-4 clay-surface clay-lift-subtle clay-lift sm:p-6 lg:p-8">
           <MarkdownPreview content={note.content} showCopyAll />
         </div>
       </article>
