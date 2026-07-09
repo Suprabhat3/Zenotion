@@ -1229,7 +1229,6 @@ body {
 /* Share dialog — bottom sheet on mobile, centered modal on desktop */
 .share-dialog-content {
   min-width: 0;
-  max-width: 100%;
   box-sizing: border-box;
 }
 
@@ -1237,7 +1236,6 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  max-width: 100%;
 }
 
 @media (min-width: 640px) {
