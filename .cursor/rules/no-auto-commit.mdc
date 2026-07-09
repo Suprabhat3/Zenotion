@@ -1,0 +1,11 @@
+---
+description: Never create git commits unless the user explicitly asks
+alwaysApply: true
+---
+
+# Git commits
+
+- Do **not** create commits on your own.
+- Asking for a commit message, a short commit, or similar wording means: **only suggest the message text**.
+- Only run `git commit` when the user clearly asks you to commit (e.g. "commit this", "create a commit", "make the commit").
+- When in doubt, provide the message and wait for an explicit commit request.
