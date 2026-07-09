@@ -87,8 +87,8 @@ export function ShareDialog({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="share-dialog-content inset-x-0 bottom-0 top-auto max-h-[88svh] w-full max-w-none translate-x-0 translate-y-0 gap-3 overflow-y-auto rounded-t-2xl rounded-b-none border-b-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:inset-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-h-[calc(100svh-2rem)] sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:gap-4 sm:rounded-lg sm:border-b sm:p-6">
-        <DialogHeader className="pr-8">
+      <DialogContent className="share-dialog-content inset-x-0 bottom-0 top-auto max-h-[88svh] w-full max-w-none translate-x-0 translate-y-0 gap-3 overflow-x-hidden overflow-y-auto rounded-t-2xl rounded-b-none border-b-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:inset-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-h-[calc(100svh-2rem)] sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:gap-4 sm:rounded-lg sm:border-b sm:p-6">
+        <DialogHeader className="min-w-0 pr-8">
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Globe className="h-5 w-5 shrink-0" />
             Share this note
@@ -98,9 +98,9 @@ export function ShareDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 pt-0 sm:space-y-4 sm:pt-2">
-          <div className="share-dialog-toggle rounded-lg border p-3 sm:p-4">
-            <div className="flex items-start gap-3">
+        <div className="min-w-0 space-y-3 pt-0 sm:space-y-4 sm:pt-2">
+          <div className="share-dialog-toggle min-w-0 rounded-lg border p-3 sm:p-4">
+            <div className="flex min-w-0 items-start gap-3">
               {isPublic ? (
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-500/10">
                   <Globe className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -111,10 +111,10 @@ export function ShareDialog({
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-start gap-3">
                   <Label
                     htmlFor="share-toggle"
-                    className="cursor-pointer text-sm font-semibold leading-snug sm:text-base"
+                    className="min-w-0 flex-1 cursor-pointer text-sm font-semibold leading-snug sm:text-base"
                   >
                     {isPublic ? "Public — anyone with link" : "Private — only you"}
                   </Label>
@@ -124,7 +124,7 @@ export function ShareDialog({
                     onCheckedChange={handleToggle}
                     disabled={isToggling}
                     aria-label="Toggle public sharing"
-                    className="shrink-0"
+                    className="mt-0.5 shrink-0"
                   />
                 </div>
                 <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
@@ -137,21 +137,21 @@ export function ShareDialog({
           </div>
 
           {isPublic && shareSlug && (
-            <div className="space-y-2">
+            <div className="min-w-0 space-y-2">
               <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Share link
               </Label>
-              <div className="share-dialog-link-row rounded-lg border bg-muted/40 p-3">
-                <div className="flex min-w-0 items-start gap-2">
-                  <Link2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  <span className="min-w-0 flex-1 break-all text-xs leading-relaxed text-muted-foreground sm:truncate sm:text-sm">
+              <div className="share-dialog-link-row min-w-0 rounded-lg border bg-muted/40 p-3">
+                <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+                  <Link2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 flex-1 truncate text-xs leading-relaxed text-muted-foreground sm:text-sm">
                     {shareUrl}
                   </span>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-3 w-full gap-1.5 sm:mt-0 sm:hidden"
+                  className="mt-3 w-full shrink-0 gap-1.5 sm:mt-0 sm:hidden"
                   onClick={handleCopyLink}
                 >
                   {copied ? (

@@ -1227,9 +1227,17 @@ body {
 }
 
 /* Share dialog — bottom sheet on mobile, centered modal on desktop */
+.share-dialog-content {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 .share-dialog-link-row {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
 }
 
 @media (min-width: 640px) {
@@ -1242,8 +1250,9 @@ body {
   }
 
   .share-dialog-link-row > div:first-child {
-    flex: 1;
+    flex: 1 1 0%;
     min-width: 0;
+    overflow: hidden;
   }
 }
 
