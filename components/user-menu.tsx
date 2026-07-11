@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LayoutDashboard, LogOut, Sparkles, User } from "lucide-react";
 import { signOut } from "@/lib/auth-client";
+import { resetAnalytics, captureEvent } from "@/lib/analytics";
 import { openAiSettings } from "@/lib/ai-storage";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +36,8 @@ export function UserMenu({ name, email, image }: UserMenuProps) {
   const router = useRouter();
 
   async function handleSignOut() {
+    captureEvent("user_signed_out");
+    resetAnalytics();
     await signOut();
     router.push("/");
     router.refresh();

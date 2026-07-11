@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 const CONTACT_EMAIL = "suprrabhat.work@gmail.com";
-const LAST_UPDATED = "July 6, 2026";
+const LAST_UPDATED = "July 11, 2026";
 
 const SECTIONS: LegalSection[] = [
   {
@@ -51,6 +51,14 @@ const SECTIONS: LegalSection[] = [
             <strong>Session data.</strong> Authentication cookies and session
             records (including IP address and browser user agent) used to keep
             you signed in securely.
+          </li>
+          <li>
+            <strong>Product analytics.</strong> When PostHog is enabled, we
+            collect page views, navigation paths, and content-free product
+            events (such as sign-in, note save, or share toggles). We identify
+            signed-in users by account ID with name and email so we can
+            understand how the app is used. We never send note titles, note
+            bodies, selected text, or secret-note data to PostHog.
           </li>
         </ul>
         <p>
@@ -97,6 +105,10 @@ const SECTIONS: LegalSection[] = [
         <li>To serve public share pages for notes you explicitly make public.</li>
         <li>To respond to support requests you send us.</li>
         <li>To debug problems and keep the service reliable.</li>
+        <li>
+          To measure product usage and improve Zenotion through privacy-minimized
+          analytics (PostHog).
+        </li>
       </ul>
     ),
   },
@@ -104,10 +116,13 @@ const SECTIONS: LegalSection[] = [
     title: "Cookies",
     content: (
       <p>
-        We use only <strong>essential cookies</strong> — session cookies set by
+        We use <strong>essential cookies</strong> — session cookies set by
         our authentication system (Better Auth) to keep you signed in, and a
-        preference for your light/dark theme. We do not use advertising or
-        cross-site tracking cookies.
+        preference for your light/dark theme. When product analytics is enabled,
+        PostHog may also set cookies or use local storage to distinguish
+        visitors, remember your analytics identity while signed in, and measure
+        page views. We do not use advertising cookies or sell analytics data to
+        third parties.
       </p>
     ),
   },
@@ -125,6 +140,10 @@ const SECTIONS: LegalSection[] = [
           <li>ImageKit, for storing and serving images you upload.</li>
           <li>Google, if you choose to sign in with Google.</li>
           <li>Your chosen AI provider, only when you run an AI action.</li>
+          <li>
+            PostHog, for privacy-minimized product analytics (page views and
+            usage events only — never note content).
+          </li>
         </ul>
         <p>
           We never sell your personal data. Notes are{" "}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, Copy, Globe, Link2, Lock, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { toggleNotePublic } from "@/app/(app)/notes/actions";
+import { captureEvent } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -51,6 +52,7 @@ export function ShareDialog({
       const updated = await toggleNotePublic(formData);
       setIsPublic(updated.isPublic);
       setShareSlug(updated.shareSlug);
+      captureEvent("note_sharing_toggled", { is_public: updated.isPublic });
       toast.success(next ? "Note is now public." : "Note is now private.");
       router.refresh();
     } catch {
@@ -67,6 +69,7 @@ export function ShareDialog({
         ? `${window.location.origin}/share/${shareSlug}`
         : `/share/${shareSlug}`;
     await navigator.clipboard.writeText(url);
+    captureEvent("share_link_copied");
     setCopied(true);
     toast.success("Share link copied to clipboard.");
     setTimeout(() => setCopied(false), 2000);

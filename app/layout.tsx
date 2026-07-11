@@ -7,6 +7,7 @@ import {
   Patrick_Hand,
   Shadows_Into_Light,
 } from "next/font/google";
+import { PostHogPageView, PostHogProvider } from "@posthog/next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SiteStructuredData } from "@/components/site-structured-data";
 import { Toaster } from "@/components/ui/sonner";
@@ -128,15 +129,24 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${caveat.variable} ${kalam.variable} ${patrickHand.variable} ${shadowsIntoLight.variable} min-h-full font-sans antialiased`}
       >
         <SiteStructuredData />
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
+        <PostHogProvider
+          clientOptions={{
+            api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+            autocapture: false,
+            capture_exceptions: false,
+          }}
         >
-          {children}
-          <Toaster />
-        </ThemeProvider>
+          <PostHogPageView />
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+            <Toaster />
+          </ThemeProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

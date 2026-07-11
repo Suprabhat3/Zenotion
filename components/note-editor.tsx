@@ -54,6 +54,7 @@ import { MarkdownPreview } from "@/components/markdown-preview";
 import { RichEditorToolbar } from "@/components/rich-editor-toolbar";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { getNoteFontOption, useNoteFont } from "@/lib/note-font";
+import { captureEvent } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -165,6 +166,7 @@ export function NoteEditor({
   function handleModeChange(mode: EditorMode) {
     setEditorMode(mode);
     localStorage.setItem(EDITOR_MODE_KEY, mode);
+    captureEvent("editor_mode_changed", { mode });
     setEditorSelection(null);
     setSelectionRect(null);
     setMarkdownMobilePane("edit");
@@ -174,7 +176,11 @@ export function NoteEditor({
   }
 
   const saveNote = useCallback(
-    async (patch: NotePatch, snapshot: { title: string; content: string }) => {
+    async (
+      patch: NotePatch,
+      snapshot: { title: string; content: string },
+      saveTrigger: "autosave" | "manual",
+    ) => {
       setSaveStatus("saving");
       try {
         // Secret notes are re-encrypted client-side before every save: the
@@ -201,6 +207,7 @@ export function NoteEditor({
           ? snapshot
           : { title: json.data.title, content: json.data.content };
         setSaveStatus("saved");
+        captureEvent("note_saved", { save_trigger: saveTrigger });
       } catch {
         setSaveStatus("error");
       }
@@ -218,7 +225,7 @@ export function NoteEditor({
       const patch: NotePatch = {};
       if (titleChanged) patch.title = title;
       if (contentChanged) patch.content = content;
-      void saveNote(patch, { title, content });
+      void saveNote(patch, { title, content }, "autosave");
     }, 1000);
 
     return () => {
@@ -235,7 +242,7 @@ export function NoteEditor({
     const patch: NotePatch = {};
     if (titleChanged) patch.title = title;
     if (contentChanged) patch.content = content;
-    void saveNote(patch, { title, content });
+    void saveNote(patch, { title, content }, "manual");
   }, [title, content, saveNote]);
 
   // Cmd/Ctrl+S forces an immediate save instead of waiting for the debounce.
@@ -346,6 +353,7 @@ export function NoteEditor({
     if (!confirm("Delete this note? This cannot be undone.")) return;
     const formData = new FormData();
     formData.set("noteId", note.id);
+    captureEvent("note_deleted");
     await deleteNote(formData);
   }
 
@@ -387,6 +395,7 @@ export function NoteEditor({
     formData.set("isFavorite", String(next));
     try {
       await toggleNoteFavorite(formData);
+      captureEvent("note_favorited", { is_favorite: next });
       router.refresh();
     } catch {
       setIsFavorite(!next);
@@ -403,6 +412,7 @@ export function NoteEditor({
     anchor.download = `${safeTitle}.md`;
     anchor.click();
     URL.revokeObjectURL(url);
+    captureEvent("note_exported");
     toast.success("Note exported as Markdown.");
   }
 
@@ -412,6 +422,7 @@ export function NoteEditor({
   }
 
   function handleAiApply(result: string, action: AiAction) {
+    captureEvent("note_ai_applied", { action });
     if (action === "generate-title") {
       setTitle(result.replace(/^#+\s*/, "").trim());
     } else if (action === "continue") {

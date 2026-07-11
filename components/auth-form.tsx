@@ -6,6 +6,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { signIn, signUp } from "@/lib/auth-client";
+import { captureEvent } from "@/lib/analytics";
 import { GoogleIcon } from "@/components/icons/google-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,9 +42,11 @@ export function AuthForm({ mode }: { mode: Mode }) {
       if (isSignup) {
         const { error } = await signUp.email({ email, password, name });
         if (error) throw new Error(error.message ?? "Could not create account.");
+        captureEvent("user_signed_up", { provider: "email" });
       } else {
         const { error } = await signIn.email({ email, password });
         if (error) throw new Error(error.message ?? "Invalid email or password.");
+        captureEvent("user_signed_in", { provider: "email" });
       }
       router.push("/dashboard");
       router.refresh();
@@ -57,6 +60,9 @@ export function AuthForm({ mode }: { mode: Mode }) {
   async function handleGoogle() {
     setGoogleLoading(true);
     try {
+      captureEvent(isSignup ? "user_signed_up" : "user_signed_in", {
+        provider: "google",
+      });
       await signIn.social({ provider: "google", callbackURL: "/dashboard" });
     } catch {
       toast.error("Google sign-in failed.");
