@@ -75,7 +75,7 @@ export function SecretNoteUnlock({ note, folders, tags }: SecretNoteUnlockProps)
 
   return (
     <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto p-4">
-      <div className="w-full max-w-sm rounded-2xl border bg-card p-6 shadow-lg sm:p-8">
+      <div className="w-full max-w-sm rounded-2xl border bg-card p-6 clay-surface clay-lift sm:p-8">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
           <Lock className="h-7 w-7 text-primary" />
         </div>

@@ -15,6 +15,7 @@ import {
   Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { modKeyLabel, useIsApplePlatform } from "@/lib/platform";
 import type { SidebarData } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { createNote } from "@/app/(app)/notes/actions";
@@ -177,6 +178,8 @@ export function AppSidebar({
   const activeFolderId = searchParams.get("folder");
   const activeTagId = searchParams.get("tag");
   const isDashboard = pathname === "/dashboard";
+  const isApple = useIsApplePlatform();
+  const modShortcut = modKeyLabel(isApple);
 
   const handleNavigate = isMobile ? onMobileClose : undefined;
 
@@ -241,7 +244,7 @@ export function AppSidebar({
                 Search
               </span>
               <kbd className="rounded-md px-1.5 py-0.5 text-[10px] text-muted-foreground clay-inset">
-                Ctrl P
+                {modShortcut}P
               </kbd>
             </button>
           )}
@@ -293,6 +296,19 @@ export function AppSidebar({
                   />
                 </li>
               ))}
+              {collapsed && sidebar.notes.length > 6 ? (
+                <li>
+                  <SidebarIconButton
+                    href="/dashboard"
+                    label={`${sidebar.notes.length - 6} more notes`}
+                    onNavigate={handleNavigate}
+                  >
+                    <span className="text-[10px] font-semibold text-muted-foreground">
+                      +{sidebar.notes.length - 6}
+                    </span>
+                  </SidebarIconButton>
+                </li>
+              ) : null}
             </ul>
           )}
         </SidebarSection>
@@ -320,6 +336,17 @@ export function AppSidebar({
                   </SidebarIconButton>
                 );
               })}
+              {sidebar.folders.length > 4 ? (
+                <SidebarIconButton
+                  href="/dashboard"
+                  label={`${sidebar.folders.length - 4} more folders`}
+                  onNavigate={handleNavigate}
+                >
+                  <span className="text-[10px] font-semibold text-muted-foreground">
+                    +{sidebar.folders.length - 4}
+                  </span>
+                </SidebarIconButton>
+              ) : null}
             </>
           ) : sidebar.folders.length === 0 ? (
             <SidebarEmptyHint
@@ -384,6 +411,17 @@ export function AppSidebar({
                   </SidebarIconButton>
                 );
               })}
+              {sidebar.tags.length > 4 ? (
+                <SidebarIconButton
+                  href="/dashboard"
+                  label={`${sidebar.tags.length - 4} more tags`}
+                  onNavigate={handleNavigate}
+                >
+                  <span className="text-[10px] font-semibold text-muted-foreground">
+                    +{sidebar.tags.length - 4}
+                  </span>
+                </SidebarIconButton>
+              ) : null}
             </>
           ) : sidebar.tags.length === 0 ? (
             <SidebarEmptyHint

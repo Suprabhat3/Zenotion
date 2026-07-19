@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { BrandLogo } from "@/components/brand-logo";
+import { SiteHeader } from "@/components/site-header";
 import { getPublicNoteBySlug } from "@/lib/notes";
 import { getCurrentUser } from "@/lib/session";
 import { MarkdownPreview } from "@/components/markdown-preview";
@@ -39,15 +39,11 @@ export default async function SharePage({ params }: PageProps) {
 
   return (
     <div className="min-h-svh clay-page-bg">
-      <header className="clay-header px-4 py-4 sm:px-6">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between">
-          <BrandLogo />
-          <span className="ambient-glow rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
-            Shared note
-          </span>
-        </div>
-      </header>
+      <SiteHeader showNavLinks={false} logoHref="/" />
       <article className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+        <p className="public-fade-up mb-4 text-xs font-medium text-muted-foreground">
+          Shared note
+        </p>
         {note.coverImage && (
           <div className="public-fade-up mb-6 overflow-hidden rounded-xl clay-surface">
             {/* eslint-disable-next-line @next/next/no-img-element */}

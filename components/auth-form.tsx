@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { signIn, signUp } from "@/lib/auth-client";
 import { captureEvent } from "@/lib/analytics";
+import { getSafeNextPath } from "@/lib/safe-redirect";
 import { GoogleIcon } from "@/components/icons/google-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import {
   Card,
   CardContent,
@@ -24,9 +26,10 @@ type Mode = "login" | "signup";
 
 export function AuthForm({ mode }: { mode: Mode }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = getSafeNextPath(searchParams.get("next"));
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   const isSignup = mode === "signup";
 
@@ -48,7 +51,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         if (error) throw new Error(error.message ?? "Invalid email or password.");
         captureEvent("user_signed_in", { provider: "email" });
       }
-      router.push("/dashboard");
+      router.push(nextPath);
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong.");
@@ -63,7 +66,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
       captureEvent(isSignup ? "user_signed_up" : "user_signed_in", {
         provider: "google",
       });
-      await signIn.social({ provider: "google", callbackURL: "/dashboard" });
+      await signIn.social({ provider: "google", callbackURL: nextPath });
     } catch {
       toast.error("Google sign-in failed.");
       setGoogleLoading(false);
@@ -131,30 +134,15 @@ export function AuthForm({ mode }: { mode: Mode }) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                autoComplete={isSignup ? "new-password" : "current-password"}
-                minLength={8}
-                className="h-11 pr-10"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-[color,transform] duration-200 hover:scale-110 hover:text-foreground"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
-            </div>
+            <PasswordInput
+              id="password"
+              name="password"
+              placeholder="••••••••"
+              autoComplete={isSignup ? "new-password" : "current-password"}
+              minLength={8}
+              className="h-11"
+              required
+            />
           </div>
           <Button
             type="submit"

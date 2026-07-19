@@ -33,7 +33,11 @@ export async function uploadNoteImage(file: File): Promise<UploadedImage> {
 
   let json: ApiResponse<UploadedImage>;
   try {
-    const res = await fetch("/api/uploads", { method: "POST", body });
+    const res = await fetch("/api/uploads", {
+      method: "POST",
+      headers: { "X-Requested-With": "Zenotion" },
+      body,
+    });
     json = (await res.json()) as ApiResponse<UploadedImage>;
   } catch {
     throw new ImageUploadError("Upload failed. Check your connection and try again.");

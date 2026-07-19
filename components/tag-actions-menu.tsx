@@ -4,6 +4,7 @@ import { useState } from "react";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteTag, renameTag } from "@/app/(app)/notes/actions";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,6 +30,7 @@ type TagActionsMenuProps = {
 
 export function TagActionsMenu({ tagId, tagName }: TagActionsMenuProps) {
   const [renameOpen, setRenameOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [name, setName] = useState(tagName);
 
   function handleRenameOpen(next: boolean) {
@@ -51,14 +53,11 @@ export function TagActionsMenu({ tagId, tagName }: TagActionsMenuProps) {
   }
 
   async function handleDelete() {
-    if (!confirm(`Delete tag "${tagName}"? It will be removed from all notes.`)) {
-      return;
-    }
-
     const formData = new FormData();
     formData.set("tagId", tagId);
     try {
       await deleteTag(formData);
+      setDeleteOpen(false);
       toast.success("Tag deleted.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not delete tag.");
@@ -92,13 +91,26 @@ export function TagActionsMenu({ tagId, tagName }: TagActionsMenuProps) {
           </DropdownMenuItem>
           <DropdownMenuItem
             className="text-destructive focus:text-destructive"
-            onSelect={() => void handleDelete()}
+            onSelect={(e) => {
+              e.preventDefault();
+              setDeleteOpen(true);
+            }}
           >
             <Trash2 className="h-4 w-4" />
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete tag"
+        description={`Delete tag "${tagName}"? It will be removed from all notes.`}
+        confirmLabel="Delete tag"
+        destructive
+        onConfirm={handleDelete}
+      />
 
       <Dialog open={renameOpen} onOpenChange={handleRenameOpen}>
         <DialogContent>

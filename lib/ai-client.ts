@@ -23,7 +23,10 @@ export async function requestAiCompletion(
 
   const res = await fetch("/api/ai", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "X-Requested-With": "Zenotion",
+    },
     body: JSON.stringify({
       action: input.action,
       content: input.content,

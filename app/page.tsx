@@ -11,7 +11,6 @@ import {
   Lock,
   Save,
   Sparkles,
-  Tags,
   Terminal,
   Zap,
 } from "lucide-react";
@@ -79,11 +78,11 @@ const HERO_BADGES = [
 ] as const;
 
 const VALUE_STRIP = [
-  "Write in markdown",
-  "Organize by project",
-  "Share with a link",
-  "AI on demand",
-  "One encrypted secret note",
+  { icon: BookOpen, label: "Write in markdown" },
+  { icon: FolderTree, label: "Organize by project" },
+  { icon: Globe, label: "Share with a link" },
+  { icon: Sparkles, label: "AI on demand" },
+  { icon: Lock, label: "One encrypted secret note" },
 ] as const;
 
 const FEATURES = [
@@ -160,9 +159,12 @@ export default async function HomePage() {
               Built for developers by a developer.
             </p>
 
-            <h1 className="public-fade-up public-fade-up-delay-2 order-2 mx-auto mb-4 max-w-4xl text-[1.875rem] font-bold leading-[1.12] tracking-tight text-balance sm:order-3 sm:mb-5 sm:text-5xl lg:text-6xl">
+            <p className="public-fade-up public-fade-up-delay-2 order-2 mb-2 font-bold tracking-tight text-foreground sm:order-3 sm:mb-3">
+              <span className="text-4xl sm:text-6xl lg:text-7xl">Zenotion</span>
+            </p>
+            <h1 className="public-fade-up public-fade-up-delay-2 order-2 mx-auto mb-4 max-w-4xl text-xl font-semibold leading-snug tracking-tight text-balance text-muted-foreground sm:order-3 sm:mb-5 sm:text-2xl lg:text-3xl">
               Note management that{" "}
-              <span className="landing-highlight">makes life easy</span>
+              <span className="landing-highlight text-foreground">makes life easy</span>
             </h1>
 
             <div className="public-fade-up public-fade-up-delay-1 order-6 hidden w-full sm:order-2 sm:block sm:w-auto">
@@ -225,15 +227,15 @@ export default async function HomePage() {
         {/* Value strip */}
         <section className="landing-value-strip px-6 py-5">
           <ul className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm font-medium text-muted-foreground">
-            {VALUE_STRIP.map((item, index) => (
-              <li key={item} className="flex items-center gap-2">
+            {VALUE_STRIP.map(({ icon: Icon, label }, index) => (
+              <li key={label} className="flex items-center gap-2">
                 {index > 0 ? (
                   <span className="hidden text-border sm:inline" aria-hidden>
                     ·
                   </span>
                 ) : null}
-                <Tags className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden />
-                {item}
+                <Icon className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden />
+                {label}
               </li>
             ))}
           </ul>

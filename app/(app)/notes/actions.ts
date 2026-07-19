@@ -3,6 +3,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { Prisma } from "@/app/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { generateShareSlug } from "@/lib/utils";
@@ -27,6 +28,13 @@ import {
 } from "@/lib/validators";
 
 const SECRET_NOTE_TITLE = "Secret note";
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002"
+  );
+}
 
 /** Constant-time comparison of the client-supplied passphrase verifier. */
 function verifierMatches(stored: string | null, provided: string): boolean {
@@ -256,32 +264,32 @@ export async function markNoteSecret(formData: FormData) {
     verifier: formData.get("verifier"),
   });
 
-  const [account, note] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: user.id },
-      select: { secretNoteId: true },
-    }),
-    prisma.note.findFirst({
+  await prisma.$transaction(async (tx) => {
+    const note = await tx.note.findFirst({
       where: { id: input.noteId, userId: user.id },
       select: { id: true, isSecret: true },
-    }),
-  ]);
-  if (!note) {
-    throw new Error("Note not found.");
-  }
-  if (account?.secretNoteId) {
-    throw new Error(
-      "You have already used your secret-note credit. Convert your current secret note back to a normal note first.",
-    );
-  }
-  if (note.isSecret) {
-    throw new Error("This note is already secret.");
-  }
+    });
+    if (!note) {
+      throw new Error("Note not found.");
+    }
+    if (note.isSecret) {
+      throw new Error("This note is already secret.");
+    }
 
-  await prisma.$transaction([
+    // Atomic credit claim — only one concurrent mark can succeed.
+    const claimed = await tx.user.updateMany({
+      where: { id: user.id, secretNoteId: null },
+      data: { secretNoteId: input.noteId },
+    });
+    if (claimed.count === 0) {
+      throw new Error(
+        "You have already used your secret-note credit. Convert your current secret note back to a normal note first.",
+      );
+    }
+
     // Plaintext version history would defeat the encryption — remove it.
-    prisma.noteVersion.deleteMany({ where: { noteId: input.noteId } }),
-    prisma.note.update({
+    await tx.noteVersion.deleteMany({ where: { noteId: input.noteId } });
+    await tx.note.update({
       where: { id: input.noteId },
       data: {
         isSecret: true,
@@ -294,12 +302,8 @@ export async function markNoteSecret(formData: FormData) {
         isPublic: false,
         shareSlug: null,
       },
-    }),
-    prisma.user.update({
-      where: { id: user.id },
-      data: { secretNoteId: input.noteId },
-    }),
-  ]);
+    });
+  });
 
   revalidateApp();
   revalidatePath(`/notes/${input.noteId}`);
@@ -358,9 +362,16 @@ export async function createFolder(formData: FormData) {
     name: formData.get("name"),
   });
 
-  await prisma.folder.create({
-    data: { name: input.name, userId: user.id },
-  });
+  try {
+    await prisma.folder.create({
+      data: { name: input.name, userId: user.id },
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      throw new Error("A folder with that name already exists.");
+    }
+    throw error;
+  }
 
   revalidateApp();
 }
@@ -380,10 +391,17 @@ export async function renameFolder(formData: FormData) {
     throw new Error("Folder not found.");
   }
 
-  await prisma.folder.update({
-    where: { id: input.folderId },
-    data: { name: input.name },
-  });
+  try {
+    await prisma.folder.update({
+      where: { id: input.folderId },
+      data: { name: input.name },
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      throw new Error("A folder with that name already exists.");
+    }
+    throw error;
+  }
 
   revalidateApp();
 }
@@ -414,13 +432,20 @@ export async function createTag(formData: FormData) {
     color: formData.get("color") || undefined,
   });
 
-  await prisma.tag.create({
-    data: {
-      name: input.name,
-      color: input.color ?? null,
-      userId: user.id,
-    },
-  });
+  try {
+    await prisma.tag.create({
+      data: {
+        name: input.name,
+        color: input.color ?? null,
+        userId: user.id,
+      },
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      throw new Error("A tag with that name already exists.");
+    }
+    throw error;
+  }
 
   revalidateApp();
 }
@@ -440,10 +465,17 @@ export async function renameTag(formData: FormData) {
     throw new Error("Tag not found.");
   }
 
-  await prisma.tag.update({
-    where: { id: input.tagId },
-    data: { name: input.name },
-  });
+  try {
+    await prisma.tag.update({
+      where: { id: input.tagId },
+      data: { name: input.name },
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      throw new Error("A tag with that name already exists.");
+    }
+    throw error;
+  }
 
   revalidateApp();
 }
@@ -476,7 +508,7 @@ export async function copySharedNote(formData: FormData): Promise<{ id: string }
   }
 
   const source = await prisma.note.findFirst({
-    where: { shareSlug, isPublic: true },
+    where: { shareSlug, isPublic: true, isSecret: false },
     select: { title: true, content: true, icon: true, coverImage: true },
   });
   if (!source) {

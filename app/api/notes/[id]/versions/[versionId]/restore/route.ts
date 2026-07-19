@@ -1,12 +1,14 @@
 import { prisma } from "@/lib/db";
 import { ApiError, ok, handleApiError } from "@/lib/api";
+import { assertSameOriginMutation } from "@/lib/request-origin";
 import { requireUser } from "@/lib/session";
 import { createNoteVersionSnapshot } from "@/lib/note-versions";
 
 type RouteContext = { params: Promise<{ id: string; versionId: string }> };
 
-export async function POST(_request: Request, context: RouteContext) {
+export async function POST(request: Request, context: RouteContext) {
   try {
+    assertSameOriginMutation(request);
     const user = await requireUser();
     const { id, versionId } = await context.params;
 

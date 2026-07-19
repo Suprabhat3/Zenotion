@@ -10,8 +10,16 @@ export const markdownSanitizeSchema = {
       ["className", /^language-[\w-]+$/],
       ["className", "hljs"],
     ],
-    span: [...(defaultSchema.attributes?.span ?? []), ["className"]],
-    pre: [...(defaultSchema.attributes?.pre ?? []), ["className"]],
+    span: [
+      ...(defaultSchema.attributes?.span ?? []),
+      ["className", /^hljs-[\w-]+$/],
+      ["className", "hljs"],
+    ],
+    pre: [
+      ...(defaultSchema.attributes?.pre ?? []),
+      ["className", /^language-[\w-]+$/],
+      ["className", "hljs"],
+    ],
     th: [
       ...(defaultSchema.attributes?.th ?? []),
       ["align", "left", "center", "right", "justify", "char"],

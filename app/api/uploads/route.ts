@@ -1,11 +1,13 @@
 import { ApiError, ok, handleApiError } from "@/lib/api";
 import { requireUser } from "@/lib/session";
 import { isImageKitConfigured, uploadImageToImageKit } from "@/lib/imagekit";
+import { assertSameOriginMutation } from "@/lib/request-origin";
 import {
   IMAGE_TOO_LARGE_MESSAGE,
   IMAGE_TYPE_MESSAGE,
   MAX_IMAGE_SIZE_BYTES,
   isAllowedImageType,
+  sniffImageMimeType,
   type UploadedImage,
 } from "@/lib/uploads";
 
@@ -16,6 +18,7 @@ import {
  */
 export async function POST(request: Request) {
   try {
+    assertSameOriginMutation(request);
     const user = await requireUser();
 
     if (!isImageKitConfigured()) {
@@ -43,18 +46,24 @@ export async function POST(request: Request) {
       throw new ApiError("VALIDATION_ERROR", IMAGE_TOO_LARGE_MESSAGE);
     }
 
+    const data = await file.arrayBuffer();
+    const sniffed = sniffImageMimeType(data);
+    if (!sniffed || sniffed !== file.type) {
+      throw new ApiError("VALIDATION_ERROR", IMAGE_TYPE_MESSAGE);
+    }
+
     const uploaded = await uploadImageToImageKit({
-      data: await file.arrayBuffer(),
+      data,
       fileName: file.name || "pasted-image",
       // Keep each user's uploads in their own folder.
       folder: `/zenotion/${user.id}`,
     });
 
-    const data: UploadedImage = {
+    const response: UploadedImage = {
       url: uploaded.url,
       fileName: uploaded.name,
     };
-    return ok(data, { status: 201, message: "Image uploaded." });
+    return ok(response, { status: 201, message: "Image uploaded." });
   } catch (error) {
     return handleApiError(error);
   }

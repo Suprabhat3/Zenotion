@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { ApiError, ok, handleApiError } from "@/lib/api";
+import { assertSameOriginMutation } from "@/lib/request-origin";
 import { requireUser } from "@/lib/session";
 import { createNoteSchema, parseOrThrow } from "@/lib/validators";
 
@@ -30,7 +31,15 @@ export async function GET() {
       },
     });
 
-    return ok(notes);
+    const data = notes.map((note) => ({
+      ...note,
+      content:
+        note.content.length > 280
+          ? `${note.content.slice(0, 280)}…`
+          : note.content,
+    }));
+
+    return ok(data);
   } catch (error) {
     return handleApiError(error);
   }
@@ -38,6 +47,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    assertSameOriginMutation(request);
     const user = await requireUser();
     const body: unknown = await request.json();
     const input = parseOrThrow(createNoteSchema, body);

@@ -35,7 +35,10 @@ export function TemplateUseButton({
       try {
         const res = await fetch("/api/notes", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "Zenotion",
+          },
           body: JSON.stringify({
             title: templateTitle,
             content: templateContent,

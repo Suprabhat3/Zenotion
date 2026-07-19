@@ -9,6 +9,7 @@ import {
   isAiConfigured,
 } from "@/lib/ai-providers";
 import { openAiSettings, useAiConfig } from "@/lib/ai-storage";
+import { modKeyLabel, useIsApplePlatform } from "@/lib/platform";
 import { AI_ACTIONS, type AiAction } from "@/lib/validators";
 import type { ApiResponse } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,8 @@ export function AiCommandPalette({ content, onApply }: AiCommandPaletteProps) {
   const aiConfig = useAiConfig();
   const configured = isAiConfigured(aiConfig);
   const activeCredentials = getActiveCredentials(aiConfig);
+  const isApple = useIsApplePlatform();
+  const modShortcut = modKeyLabel(isApple);
 
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<PaletteView>("commands");
@@ -129,7 +132,10 @@ export function AiCommandPalette({ content, onApply }: AiCommandPaletteProps) {
       try {
         const res = await fetch("/api/ai", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "Zenotion",
+          },
           body: JSON.stringify({
             action,
             content,
@@ -233,7 +239,7 @@ export function AiCommandPalette({ content, onApply }: AiCommandPaletteProps) {
         <Sparkles className="h-4 w-4" />
         AI
         <kbd className="hidden rounded border bg-muted px-1.5 text-[10px] sm:inline">
-          ⌘K
+          {modShortcut}K
         </kbd>
       </Button>
 

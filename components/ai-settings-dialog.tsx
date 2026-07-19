@@ -303,7 +303,7 @@ export function AiSettingsDialog({ open, onOpenChange }: AiSettingsDialogProps) 
                     }
                     setForm((current) => ({ ...current, model: value }));
                   }}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  className="flex h-9 w-full rounded-md border border-input bg-card px-3 text-sm clay-inset outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
                   {meta.models.map((model) => (
                     <option key={model} value={model}>

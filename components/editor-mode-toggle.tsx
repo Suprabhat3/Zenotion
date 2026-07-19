@@ -12,10 +12,15 @@ type EditorModeToggleProps = {
 
 export function EditorModeToggle({ mode, onChange }: EditorModeToggleProps) {
   return (
-    <div className="inline-flex shrink-0 rounded-lg border bg-muted/50 p-0.5">
+    <div
+      className="inline-flex shrink-0 rounded-lg p-0.5 clay-inset"
+      role="group"
+      aria-label="Editor mode"
+    >
       <button
         type="button"
         onClick={() => onChange("rich")}
+        aria-pressed={mode === "rich"}
         className={cn(
           "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors sm:px-3",
           mode === "rich"
@@ -31,6 +36,7 @@ export function EditorModeToggle({ mode, onChange }: EditorModeToggleProps) {
       <button
         type="button"
         onClick={() => onChange("markdown")}
+        aria-pressed={mode === "markdown"}
         className={cn(
           "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors sm:px-3",
           mode === "markdown"

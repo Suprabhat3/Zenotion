@@ -243,5 +243,12 @@ export function mapProviderErrorMessage(error: AiProviderError): string {
   if (error.status === 404) {
     return "Model not found. Choose a different model in AI settings.";
   }
-  return error.message;
+  if (error.status === 400) {
+    return "The AI provider rejected the request. Check your model and prompt.";
+  }
+  if (error.status !== undefined && error.status >= 500) {
+    return "The AI provider is temporarily unavailable. Try again shortly.";
+  }
+  // Never echo raw provider messages to clients — they can leak internals.
+  return "The AI request failed. Check your API key and model, then try again.";
 }

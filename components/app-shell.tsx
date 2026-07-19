@@ -4,6 +4,7 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
@@ -46,7 +47,37 @@ function getSidebarCollapsedServerSnapshot(): boolean {
 
 function SidebarFallback({ collapsed }: { collapsed: boolean }) {
   return (
-    <aside className="w-full animate-pulse p-4" aria-hidden />
+    <aside
+      className={cn(
+        "flex h-full w-full flex-col gap-3 p-3",
+        collapsed ? "items-center" : "",
+      )}
+      aria-hidden
+    >
+      <div
+        className={cn(
+          "h-9 animate-pulse rounded-lg bg-muted",
+          collapsed ? "w-9" : "w-full",
+        )}
+      />
+      <div
+        className={cn(
+          "h-9 animate-pulse rounded-lg bg-muted",
+          collapsed ? "w-9" : "w-full",
+        )}
+      />
+      <div className="mt-2 space-y-2">
+        {Array.from({ length: 5 }, (_, index) => (
+          <div
+            key={index}
+            className={cn(
+              "h-8 animate-pulse rounded-md bg-muted/80",
+              collapsed ? "w-9" : "w-full",
+            )}
+          />
+        ))}
+      </div>
+    </aside>
   );
 }
 
@@ -80,15 +111,35 @@ export function AppShell({ sidebar, children }: AppShellProps) {
     setMobileOpen(true);
   }, []);
 
+  const mobileMenuTriggerRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     if (!isMobileDrawerOpen) return;
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        closeMobileSidebar();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+
+    const drawer = document.querySelector<HTMLElement>(".clay-sidebar-shell-mobile-open");
+    const focusable = drawer?.querySelector<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    focusable?.focus();
+
+    const menuTrigger = mobileMenuTriggerRef.current;
+
     return () => {
       document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+      menuTrigger?.focus();
     };
-  }, [isMobileDrawerOpen]);
+  }, [isMobileDrawerOpen, closeMobileSidebar]);
 
   const isCollapsed = hydrated && collapsed && !isMobile;
 
@@ -126,6 +177,7 @@ export function AppShell({ sidebar, children }: AppShellProps) {
         {isMobile ? (
           <div className="app-mobile-toolbar shrink-0">
             <Button
+              ref={mobileMenuTriggerRef}
               type="button"
               variant="ghost"
               size="icon"

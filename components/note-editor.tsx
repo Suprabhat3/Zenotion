@@ -13,6 +13,7 @@ import type { Editor } from "@tiptap/react";
 import {
   Check,
   Download,
+  History,
   Loader2,
   Lock,
   LockOpen,
@@ -21,6 +22,7 @@ import {
   Star,
   Trash2,
   TriangleAlert,
+  Type,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -36,6 +38,7 @@ import {
   unmarkNoteSecret,
 } from "@/app/(app)/notes/actions";
 import { encryptPayload } from "@/lib/secret-crypto";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { SecretNoteDialog } from "@/components/secret-note-dialog";
 import { NoteHeaderDecorations } from "@/components/note-header-decorations";
 import { NoteIconPicker } from "@/components/note-icon-picker";
@@ -53,8 +56,12 @@ import { NoteFontPicker } from "@/components/note-font-picker";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { RichEditorToolbar } from "@/components/rich-editor-toolbar";
 import { RichTextEditor } from "@/components/rich-text-editor";
-import { getNoteFontOption, useNoteFont } from "@/lib/note-font";
+import { getNoteFontOption, NOTE_FONT_OPTIONS, setNoteFont, useNoteFont } from "@/lib/note-font";
 import { captureEvent } from "@/lib/analytics";
+import {
+  navigateWithNoteGuard,
+  registerNoteNavGuard,
+} from "@/lib/note-navigation-guard";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -68,7 +75,7 @@ import {
 
 const EDITOR_MODE_KEY = "zenotion-editor-mode";
 
-type SaveStatus = "idle" | "saving" | "saved" | "error";
+type SaveStatus = "idle" | "unsaved" | "saving" | "saved" | "error";
 type MarkdownMobilePane = "edit" | "preview";
 
 /** In-memory key material for an unlocked secret note. Never persisted. */
@@ -93,6 +100,12 @@ type NotePatch = {
   title?: string;
   content?: string;
   secretIv?: string;
+};
+
+type PendingSave = {
+  patch: NotePatch;
+  snapshot: { title: string; content: string };
+  saveTrigger: "autosave" | "manual";
 };
 
 function getStoredEditorMode(): EditorMode {
@@ -122,6 +135,9 @@ export function NoteEditor({
 }: NoteEditorProps) {
   const router = useRouter();
   const [secretDialogOpen, setSecretDialogOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [removeSecretOpen, setRemoveSecretOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
   const [editorMode, setEditorMode] = useState<EditorMode>(() => {
@@ -137,8 +153,18 @@ export function NoteEditor({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [richKey, setRichKey] = useState(0);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedIdleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSaved = useRef({ title: note.title, content: note.content });
+  const saveInFlight = useRef(false);
+  const pendingSave = useRef<PendingSave | null>(null);
+  const titleRef = useRef(title);
+  const contentRef = useRef(content);
   const replaceSelectionRef = useRef<((text: string) => void) | null>(null);
+
+  useEffect(() => {
+    titleRef.current = title;
+    contentRef.current = content;
+  }, [title, content]);
   const [editorSelection, setEditorSelection] = useState<EditorSelection | null>(
     null,
   );
@@ -175,44 +201,96 @@ export function NoteEditor({
     }
   }
 
+  const markSavedIdle = useCallback(() => {
+    if (savedIdleTimer.current) clearTimeout(savedIdleTimer.current);
+    savedIdleTimer.current = setTimeout(() => {
+      setSaveStatus((current) => (current === "saved" ? "idle" : current));
+    }, 2500);
+  }, []);
+
   const saveNote = useCallback(
     async (
       patch: NotePatch,
       snapshot: { title: string; content: string },
       saveTrigger: "autosave" | "manual",
-    ) => {
+    ): Promise<boolean> => {
+      // Serialize saves so overlapping PATCHes cannot land out of order.
+      if (saveInFlight.current) {
+        pendingSave.current = { patch, snapshot, saveTrigger };
+        return false;
+      }
+
+      saveInFlight.current = true;
+      if (savedIdleTimer.current) clearTimeout(savedIdleTimer.current);
       setSaveStatus("saving");
+
+      let latest: PendingSave = { patch, snapshot, saveTrigger };
+      let succeeded = false;
+
       try {
-        // Secret notes are re-encrypted client-side before every save: the
-        // whole { title, content } payload travels as ciphertext + fresh IV.
-        const body: NotePatch = secret
-          ? await encryptPayload(secret.encKey, snapshot).then((envelope) => ({
-              content: envelope.ciphertext,
-              secretIv: envelope.iv,
-            }))
-          : patch;
-        const res = await fetch(`/api/notes/${note.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        const json = (await res.json()) as ApiResponse<NoteDetail>;
-        if (!json.success) {
-          setSaveStatus("error");
-          return;
+        while (true) {
+          const { patch: nextPatch, snapshot: nextSnapshot, saveTrigger: trigger } =
+            latest;
+
+          // Secret notes are re-encrypted client-side before every save: the
+          // whole { title, content } payload travels as ciphertext + fresh IV.
+          const body: NotePatch = secret
+            ? await encryptPayload(secret.encKey, nextSnapshot).then(
+                (envelope) => ({
+                  content: envelope.ciphertext,
+                  secretIv: envelope.iv,
+                }),
+              )
+            : nextPatch;
+
+          const res = await fetch(`/api/notes/${note.id}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Requested-With": "Zenotion",
+            },
+            body: JSON.stringify(body),
+          });
+          const json = (await res.json()) as ApiResponse<NoteDetail>;
+          if (!json.success) {
+            setSaveStatus("error");
+            succeeded = false;
+            break;
+          }
+
+          // For secret notes the response holds ciphertext — track the
+          // plaintext snapshot we just encrypted instead.
+          lastSaved.current = secret
+            ? nextSnapshot
+            : { title: json.data.title, content: json.data.content };
+          captureEvent("note_saved", { save_trigger: trigger });
+          succeeded = true;
+
+          if (pendingSave.current) {
+            latest = pendingSave.current;
+            pendingSave.current = null;
+            continue;
+          }
+
+          setSaveStatus("saved");
+          markSavedIdle();
+          break;
         }
-        // For secret notes the response holds ciphertext — track the
-        // plaintext snapshot we just encrypted instead.
-        lastSaved.current = secret
-          ? snapshot
-          : { title: json.data.title, content: json.data.content };
-        setSaveStatus("saved");
-        captureEvent("note_saved", { save_trigger: saveTrigger });
       } catch {
         setSaveStatus("error");
+        succeeded = false;
+      } finally {
+        saveInFlight.current = false;
+        if (pendingSave.current) {
+          const queued = pendingSave.current;
+          pendingSave.current = null;
+          void saveNote(queued.patch, queued.snapshot, queued.saveTrigger);
+        }
       }
+
+      return succeeded;
     },
-    [note.id, secret],
+    [note.id, secret, markSavedIdle],
   );
 
   useEffect(() => {
@@ -220,44 +298,49 @@ export function NoteEditor({
     const contentChanged = content !== lastSaved.current.content;
     if (!titleChanged && !contentChanged) return;
 
+    setSaveStatus((current) => (current === "saving" ? current : "unsaved"));
+
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       const patch: NotePatch = {};
-      if (titleChanged) patch.title = title;
-      if (contentChanged) patch.content = content;
+      if (title !== lastSaved.current.title) patch.title = title;
+      if (content !== lastSaved.current.content) patch.content = content;
+      if (Object.keys(patch).length === 0 && !secret) return;
       void saveNote(patch, { title, content }, "autosave");
     }, 1000);
 
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
-  }, [title, content, saveNote]);
+  }, [title, content, saveNote, secret]);
 
-  // Flush the pending autosave immediately (used by Cmd/Ctrl+S).
-  const flushSave = useCallback(() => {
+  // Flush the pending autosave immediately (used by Cmd/Ctrl+S and nav guards).
+  const flushSave = useCallback((): Promise<boolean> => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     const titleChanged = title !== lastSaved.current.title;
     const contentChanged = content !== lastSaved.current.content;
-    if (!titleChanged && !contentChanged) return;
+    if (!titleChanged && !contentChanged) {
+      return Promise.resolve(saveStatus !== "error" && saveStatus !== "saving");
+    }
     const patch: NotePatch = {};
     if (titleChanged) patch.title = title;
     if (contentChanged) patch.content = content;
-    void saveNote(patch, { title, content }, "manual");
-  }, [title, content, saveNote]);
+    return saveNote(patch, { title, content }, "manual");
+  }, [title, content, saveNote, saveStatus]);
 
   // Cmd/Ctrl+S forces an immediate save instead of waiting for the debounce.
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
-        flushSave();
+        void flushSave();
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [flushSave]);
 
-  // Warn before leaving with unsaved or in-flight changes.
+  // Warn before leaving with unsaved or in-flight changes (tab close/refresh).
   useEffect(() => {
     function onBeforeUnload(e: BeforeUnloadEvent) {
       const dirty =
@@ -272,6 +355,59 @@ export function NoteEditor({
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [title, content, saveStatus]);
 
+  useEffect(() => {
+    registerNoteNavGuard({
+      isDirty: () =>
+        titleRef.current !== lastSaved.current.title ||
+        contentRef.current !== lastSaved.current.content ||
+        saveInFlight.current,
+      flush: flushSave,
+    });
+    return () => registerNoteNavGuard(null);
+  }, [flushSave]);
+
+  // Soft-nav guard: flush dirty edits before in-app link navigations.
+  useEffect(() => {
+    function isInternalPath(href: string): boolean {
+      return href.startsWith("/") && !href.startsWith("//");
+    }
+
+    function isDirty(): boolean {
+      return (
+        titleRef.current !== lastSaved.current.title ||
+        contentRef.current !== lastSaved.current.content ||
+        saveInFlight.current
+      );
+    }
+
+    function onDocumentClick(e: MouseEvent) {
+      if (e.defaultPrevented || e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+      const anchor = (e.target as Element | null)?.closest("a[href]");
+      if (!(anchor instanceof HTMLAnchorElement)) return;
+      if (anchor.target === "_blank" || anchor.hasAttribute("download")) return;
+
+      const href = anchor.getAttribute("href");
+      if (!href || !isInternalPath(href)) return;
+      if (!isDirty()) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      void navigateWithNoteGuard(href, router.push);
+    }
+
+    document.addEventListener("click", onDocumentClick, true);
+    return () => document.removeEventListener("click", onDocumentClick, true);
+  }, [router]);
+
+  useEffect(() => {
+    return () => {
+      if (savedIdleTimer.current) clearTimeout(savedIdleTimer.current);
+    };
+  }, []);
+
   // Icon/cover changes save immediately (no debounce) — they're single clicks,
   // not keystrokes. `router.refresh()` keeps the sidebar/list icons in sync.
   const saveDecoration = useCallback(
@@ -282,7 +418,10 @@ export function NoteEditor({
       try {
         const res = await fetch(`/api/notes/${note.id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "Zenotion",
+          },
           body: JSON.stringify(patch),
         });
         const json = (await res.json()) as ApiResponse<NoteDetail>;
@@ -350,7 +489,6 @@ export function NoteEditor({
   }
 
   async function handleDelete() {
-    if (!confirm("Delete this note? This cannot be undone.")) return;
     const formData = new FormData();
     formData.set("noteId", note.id);
     captureEvent("note_deleted");
@@ -358,19 +496,11 @@ export function NoteEditor({
   }
 
   function handleLockNow() {
-    flushSave();
-    onLock?.();
+    void flushSave().then(() => onLock?.());
   }
 
   async function handleRemoveSecret() {
     if (!secret) return;
-    if (
-      !confirm(
-        "Convert this back to a normal note? Its content will be stored unencrypted again and your secret-note credit is freed.",
-      )
-    ) {
-      return;
-    }
     const formData = new FormData();
     formData.set("noteId", note.id);
     formData.set("verifier", secret.verifier);
@@ -378,6 +508,7 @@ export function NoteEditor({
     formData.set("content", content);
     try {
       await unmarkNoteSecret(formData);
+      setRemoveSecretOpen(false);
       toast.success("Note is no longer secret.");
       router.refresh();
     } catch (error) {
@@ -424,11 +555,43 @@ export function NoteEditor({
   function handleAiApply(result: string, action: AiAction) {
     captureEvent("note_ai_applied", { action });
     if (action === "generate-title") {
+      const previous = title;
       setTitle(result.replace(/^#+\s*/, "").trim());
+      toast.success("Title updated", {
+        duration: 10_000,
+        action: {
+          label: "Undo",
+          onClick: () => setTitle(previous),
+        },
+      });
     } else if (action === "continue") {
+      const previous = content;
       setContent((c) => (c.endsWith("\n") ? c + result : `${c}\n\n${result}`));
+      toast.success("AI text appended", {
+        duration: 10_000,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            setContent(previous);
+            if (editorMode === "rich") setRichKey((k) => k + 1);
+          },
+        },
+      });
     } else {
+      const previous = content;
       setContent(result);
+      if (previous.trim()) {
+        toast.success("AI result applied", {
+          duration: 10_000,
+          action: {
+            label: "Undo",
+            onClick: () => {
+              setContent(previous);
+              if (editorMode === "rich") setRichKey((k) => k + 1);
+            },
+          },
+        });
+      }
     }
     if (editorMode === "rich") {
       setRichKey((k) => k + 1);
@@ -484,6 +647,7 @@ export function NoteEditor({
 
   const statusLabel: Record<SaveStatus, string> = {
     idle: "",
+    unsaved: "Unsaved changes…",
     saving: "Saving…",
     saved: "Saved",
     error: "Save failed",
@@ -532,6 +696,7 @@ export function NoteEditor({
               onChange={(e) => setTitle(e.target.value)}
               className="w-full bg-transparent text-2xl font-semibold tracking-tight outline-none placeholder:text-muted-foreground sm:text-3xl"
               placeholder="Untitled"
+              aria-label="Note title"
             />
           </div>
         )}
@@ -553,18 +718,31 @@ export function NoteEditor({
                     ? "text-emerald-600 dark:text-emerald-400"
                     : "text-muted-foreground"
               }`}
+              role="status"
+              aria-live="polite"
             >
               {saveStatus === "saving" && (
                 <Loader2 className="h-3 w-3 animate-spin" />
               )}
               {saveStatus === "saved" && <Check className="h-3 w-3" />}
               {saveStatus === "error" && <TriangleAlert className="h-3 w-3" />}
-              <span className="max-sm:sr-only">{statusLabel[saveStatus]}</span>
+              {saveStatus === "unsaved" && (
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />
+              )}
+              <span
+                className={
+                  saveStatus === "error" || saveStatus === "unsaved"
+                    ? undefined
+                    : "max-sm:sr-only"
+                }
+              >
+                {statusLabel[saveStatus]}
+              </span>
               {saveStatus === "error" && (
                 <button
                   type="button"
                   onClick={handleRetrySave}
-                  className="ml-1 underline underline-offset-2 hover:no-underline max-sm:sr-only"
+                  className="ml-1 underline underline-offset-2 hover:no-underline"
                 >
                   Retry
                 </button>
@@ -572,50 +750,72 @@ export function NoteEditor({
             </span>
           )}
 
-          {secret && (
-            <span
-              className="mr-1 hidden shrink-0 items-center gap-1 text-xs text-muted-foreground sm:flex"
-              title="Encrypted on this device — the server only stores ciphertext"
-            >
-              <Lock className="h-3 w-3" />
-              Secret
-            </span>
-          )}
-
-          <NoteFontPicker />
-
-          {!secret && (
-            <NoteVersionHistory noteId={note.id} onRestore={handleVersionRestore} />
-          )}
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleFavoriteToggle}
-            title={isFavorite ? "Remove from favorites" : "Add to favorites"}
-            aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-          >
-            <Star
-              className={`h-4 w-4 ${
-                isFavorite ? "fill-amber-400 text-amber-400" : ""
-              }`}
-            />
-          </Button>
-
-          <CopyButton text={content} label="Copy" className="hidden sm:inline-flex" />
-
           {!secret && (
             <AiCommandPalette content={content} onApply={handleAiApply} />
           )}
+
+          {!secret && (
+            <ShareDialog
+              noteId={note.id}
+              initialIsPublic={note.isPublic}
+              initialShareSlug={note.shareSlug}
+            />
+          )}
+
+          {secret && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 w-9 shrink-0 gap-0 px-0 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-3"
+              onClick={handleLockNow}
+              title="Lock this note now"
+              aria-label="Lock this note now"
+            >
+              <Lock className="h-4 w-4" />
+              <span className="hidden sm:inline">Lock</span>
+            </Button>
+          )}
+
+          {!secret && (
+            <NoteVersionHistory
+              noteId={note.id}
+              onRestore={handleVersionRestore}
+              open={historyOpen}
+              onOpenChange={setHistoryOpen}
+              triggerClassName="hidden md:inline-flex"
+            />
+          )}
+
+          <div className="hidden items-center gap-1.5 md:flex">
+            <NoteFontPicker />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleFavoriteToggle}
+              title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            >
+              <Star
+                className={`h-4 w-4 ${
+                  isFavorite ? "fill-amber-400 text-amber-400" : ""
+                }`}
+              />
+            </Button>
+            <CopyButton text={content} label="Copy" />
+          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1.5">
                 <MoreHorizontal className="h-4 w-4" />
-                <span className="hidden sm:inline">Organize</span>
+                <span className="hidden sm:inline">More</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuLabel className="md:hidden">
+                {wordCount === 1 ? "1 word" : `${wordCount} words`}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator className="md:hidden" />
               <DropdownMenuLabel>Folder</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => handleMove(null)}>
                 No folder
@@ -643,82 +843,73 @@ export function NoteEditor({
                 ))
               )}
               <DropdownMenuSeparator />
-              {secret ? (
-                <DropdownMenuItem onClick={handleRemoveSecret}>
-                  <LockOpen className="h-4 w-4" />
-                  Remove secret protection
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem onClick={() => setSecretDialogOpen(true)}>
+              <DropdownMenuItem
+                className="md:hidden"
+                onClick={handleFavoriteToggle}
+              >
+                <Star
+                  className={`h-4 w-4 ${
+                    isFavorite ? "fill-amber-400 text-amber-400" : ""
+                  }`}
+                />
+                {isFavorite ? "Unfavorite" : "Favorite"}
+              </DropdownMenuItem>
+              {!secret && (
+                <DropdownMenuItem
+                  className="md:hidden"
+                  onClick={() => setSecretDialogOpen(true)}
+                >
                   <Lock className="h-4 w-4" />
                   Make secret note
                 </DropdownMenuItem>
               )}
+              {secret ? (
+                <DropdownMenuItem onClick={() => setRemoveSecretOpen(true)}>
+                  <LockOpen className="h-4 w-4" />
+                  Remove secret protection
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleExport} className="sm:hidden">
+              {!secret ? (
+                <DropdownMenuItem
+                  className="md:hidden"
+                  onClick={() => setHistoryOpen(true)}
+                >
+                  <History className="h-4 w-4" />
+                  Version history
+                </DropdownMenuItem>
+              ) : null}
+              <DropdownMenuLabel className="md:hidden">Note font</DropdownMenuLabel>
+              {NOTE_FONT_OPTIONS.map((option) => (
+                <DropdownMenuCheckboxItem
+                  key={option.id}
+                  className="md:hidden"
+                  checked={noteFont === option.id}
+                  onCheckedChange={() => setNoteFont(option.id)}
+                >
+                  <Type className="h-4 w-4" />
+                  {option.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+              <DropdownMenuSeparator className="md:hidden" />
+              <DropdownMenuItem onClick={handleExport}>
                 <Download className="h-4 w-4" />
                 Export as Markdown
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handlePrint} className="sm:hidden">
+              <DropdownMenuItem onClick={handlePrint}>
                 <Printer className="h-4 w-4" />
                 Print / Save as PDF
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive sm:hidden">
-                <Trash2 className="h-4 w-4" />
+              <DropdownMenuItem
+                onClick={() => setDeleteOpen(true)}
+                className="text-destructive focus:text-destructive"
+                aria-label="Delete note"
+              >
+                <Trash2 className="h-4 w-4" aria-hidden />
                 Delete note
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExport} className="hidden sm:flex">
-                <Download className="h-4 w-4" />
-                Export as Markdown
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handlePrint} className="hidden sm:flex">
-                <Printer className="h-4 w-4" />
-                Print / Save as PDF
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {secret ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 w-9 shrink-0 gap-0 px-0 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-3"
-              onClick={handleLockNow}
-              title="Lock this note now"
-              aria-label="Lock this note now"
-            >
-              <Lock className="h-4 w-4" />
-              <span className="hidden sm:inline">Lock</span>
-            </Button>
-          ) : (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 w-9 shrink-0 gap-0 px-0 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-3"
-                onClick={() => setSecretDialogOpen(true)}
-                title="Make this your secret note — encrypted so only you can read it"
-                aria-label="Make secret note"
-              >
-                <Lock className="h-4 w-4" />
-                <span className="hidden lg:inline">Secret</span>
-              </Button>
-              <ShareDialog
-                noteId={note.id}
-                initialIsPublic={note.isPublic}
-                initialShareSlug={note.shareSlug}
-              />
-            </>
-          )}
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden text-destructive hover:text-destructive sm:inline-flex"
-            onClick={handleDelete}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
         </div>
         </div>
         </div>
@@ -771,6 +962,7 @@ export function NoteEditor({
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full bg-transparent text-3xl font-bold tracking-tight outline-none placeholder:text-muted-foreground sm:text-4xl"
                   placeholder="Untitled"
+                  aria-label="Note title"
                 />
               </div>
             </div>
@@ -788,9 +980,26 @@ export function NoteEditor({
           </div>
         ) : (
           <div className="editor-split flex min-h-0 flex-1 flex-col overflow-hidden lg:grid lg:grid-cols-2">
-            <div className="editor-markdown-tabs">
+            <div
+              className="editor-markdown-tabs"
+              role="tablist"
+              aria-label="Markdown editor panes"
+              onKeyDown={(e) => {
+                if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                  e.preventDefault();
+                  setMarkdownMobilePane((current) =>
+                    current === "edit" ? "preview" : "edit",
+                  );
+                }
+              }}
+            >
               <button
                 type="button"
+                role="tab"
+                id="markdown-tab-edit"
+                aria-controls="markdown-panel-edit"
+                aria-selected={markdownMobilePane === "edit"}
+                tabIndex={markdownMobilePane === "edit" ? 0 : -1}
                 className={cn(
                   "editor-markdown-tab",
                   markdownMobilePane === "edit" && "editor-markdown-tab-active",
@@ -801,6 +1010,11 @@ export function NoteEditor({
               </button>
               <button
                 type="button"
+                role="tab"
+                id="markdown-tab-preview"
+                aria-controls="markdown-panel-preview"
+                aria-selected={markdownMobilePane === "preview"}
+                tabIndex={markdownMobilePane === "preview" ? 0 : -1}
                 className={cn(
                   "editor-markdown-tab",
                   markdownMobilePane === "preview" && "editor-markdown-tab-active",
@@ -852,6 +1066,24 @@ export function NoteEditor({
       </div>
 
     </div>
+    <ConfirmDialog
+      open={deleteOpen}
+      onOpenChange={setDeleteOpen}
+      title="Delete note"
+      description="Delete this note? This cannot be undone."
+      confirmLabel="Delete note"
+      destructive
+      onConfirm={handleDelete}
+    />
+    <ConfirmDialog
+      open={removeSecretOpen}
+      onOpenChange={setRemoveSecretOpen}
+      title="Remove secret protection"
+      description="Convert this back to a normal note? Its content will be stored unencrypted again and your secret-note credit is freed."
+      confirmLabel="Remove protection"
+      destructive
+      onConfirm={handleRemoveSecret}
+    />
     {!secret && (
       <SecretNoteDialog
         noteId={note.id}

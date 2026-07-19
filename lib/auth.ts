@@ -3,6 +3,20 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/db";
 
+const betterAuthSecret = process.env.BETTER_AUTH_SECRET;
+const betterAuthUrl = process.env.BETTER_AUTH_URL;
+
+if (process.env.NODE_ENV === "production") {
+  if (!betterAuthSecret || betterAuthSecret.length < 32) {
+    throw new Error(
+      "BETTER_AUTH_SECRET must be set to a random string of at least 32 characters in production.",
+    );
+  }
+  if (!betterAuthUrl) {
+    throw new Error("BETTER_AUTH_URL must be set in production.");
+  }
+}
+
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
@@ -20,8 +34,8 @@ const socialProviders =
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
-  secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL,
+  secret: betterAuthSecret,
+  baseURL: betterAuthUrl,
   emailAndPassword: {
     enabled: true,
   },

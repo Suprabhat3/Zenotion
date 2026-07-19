@@ -154,22 +154,27 @@ export function RichEditorToolbar({ editor, className }: RichEditorToolbarProps)
         className,
       )}
     >
-      {tools.map(({ icon: Icon, label, action, isActive }) => (
-        <Button
-          key={label}
-          type="button"
-          variant="ghost"
-          size="icon"
-          className={cn(
-            "h-8 w-8",
-            isActive?.() && "bg-accent text-accent-foreground",
-          )}
-          onClick={action}
-          title={label}
-        >
-          <Icon className="h-4 w-4" />
-        </Button>
-      ))}
+      {tools.map(({ icon: Icon, label, action, isActive }) => {
+        const active = isActive?.() ?? false;
+        return (
+          <Button
+            key={label}
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "h-8 w-8",
+              active && "bg-accent text-accent-foreground",
+            )}
+            onClick={action}
+            title={label}
+            aria-label={label}
+            aria-pressed={isActive ? active : undefined}
+          >
+            <Icon className="h-4 w-4" />
+          </Button>
+        );
+      })}
     </div>
   );
 }

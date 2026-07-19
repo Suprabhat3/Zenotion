@@ -14,8 +14,9 @@ export const AI_CONFIG_CHANGE_EVENT = "zenotion-ai-config-change";
 export const AI_SETTINGS_OPEN_EVENT = "zenotion-ai-settings-open";
 
 // ---------------------------------------------------------------------------
-// AES-GCM encryption helpers — keeps API keys out of localStorage as plaintext.
-// The key is derived from the app origin via PBKDF2 so it's domain-bound.
+// AES-GCM obfuscation helpers — API keys are not stored as plaintext, but this
+// is NOT a strong secret store. Any same-origin script can derive the key.
+// Prefer CSP hardening; treat persisted keys as convenience, not vault-grade.
 // ---------------------------------------------------------------------------
 
 const CRYPTO_SALT = "zenotion-ai-salt-v1";

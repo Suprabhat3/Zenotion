@@ -36,6 +36,15 @@ export function ShareDialog({
   const [isToggling, setIsToggling] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  function handleOpenChange(next: boolean) {
+    setOpen(next);
+    if (next) {
+      setIsPublic(initialIsPublic);
+      setShareSlug(initialShareSlug);
+      setCopied(false);
+    }
+  }
+
   const shareUrl =
     shareSlug && typeof window !== "undefined"
       ? `${window.location.origin}/share/${shareSlug}`
@@ -76,7 +85,7 @@ export function ShareDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
           variant={isPublic ? "default" : "outline"}

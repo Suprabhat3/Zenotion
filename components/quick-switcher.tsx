@@ -6,6 +6,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { FileText, Folder, Loader2, Lock, Search, Star } from "lucide-react";
 import type { ApiResponse } from "@/lib/api";
 import type { NoteSearchResult } from "@/lib/types";
+import { navigateWithNoteGuard } from "@/lib/note-navigation-guard";
 import { Input } from "@/components/ui/input";
 
 export const QUICK_SWITCHER_OPEN_EVENT = "zenotion-quick-switcher-open";
@@ -87,7 +88,7 @@ export function QuickSwitcher() {
 
   function handleSelect(noteId: string) {
     setOpen(false);
-    router.push(`/notes/${noteId}`);
+    void navigateWithNoteGuard(`/notes/${noteId}`, router.push);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {

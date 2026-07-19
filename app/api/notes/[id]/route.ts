@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { createNoteVersionSnapshot } from "@/lib/note-versions";
 import { ApiError, ok, handleApiError } from "@/lib/api";
+import { assertSameOriginMutation } from "@/lib/request-origin";
 import { requireUser } from "@/lib/session";
 import { parseOrThrow, updateNoteSchema } from "@/lib/validators";
 
@@ -54,6 +55,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
+    assertSameOriginMutation(request);
     const user = await requireUser();
     const { id } = await context.params;
     await getOwnedNote(user.id, id);
@@ -163,8 +165,9 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
   try {
+    assertSameOriginMutation(request);
     const user = await requireUser();
     const { id } = await context.params;
     await getOwnedNote(user.id, id);

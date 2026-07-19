@@ -4,6 +4,7 @@ import { useState } from "react";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteFolder, renameFolder } from "@/app/(app)/notes/actions";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,6 +35,7 @@ export function FolderActionsMenu({
   noteCount,
 }: FolderActionsMenuProps) {
   const [renameOpen, setRenameOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [name, setName] = useState(folderName);
 
   function handleRenameOpen(next: boolean) {
@@ -56,21 +58,21 @@ export function FolderActionsMenu({
   }
 
   async function handleDelete() {
-    const message =
-      noteCount > 0
-        ? `Delete "${folderName}"? ${noteCount} note${noteCount === 1 ? "" : "s"} will move to All notes.`
-        : `Delete "${folderName}"?`;
-    if (!confirm(message)) return;
-
     const formData = new FormData();
     formData.set("folderId", folderId);
     try {
       await deleteFolder(formData);
+      setDeleteOpen(false);
       toast.success("Folder deleted.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not delete folder.");
     }
   }
+
+  const deleteDescription =
+    noteCount > 0
+      ? `Delete "${folderName}"? ${noteCount} note${noteCount === 1 ? "" : "s"} will move to All notes.`
+      : `Delete "${folderName}"? This cannot be undone.`;
 
   return (
     <>
@@ -99,13 +101,26 @@ export function FolderActionsMenu({
           </DropdownMenuItem>
           <DropdownMenuItem
             className="text-destructive focus:text-destructive"
-            onSelect={() => void handleDelete()}
+            onSelect={(e) => {
+              e.preventDefault();
+              setDeleteOpen(true);
+            }}
           >
             <Trash2 className="h-4 w-4" />
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete folder"
+        description={deleteDescription}
+        confirmLabel="Delete folder"
+        destructive
+        onConfirm={handleDelete}
+      />
 
       <Dialog open={renameOpen} onOpenChange={handleRenameOpen}>
         <DialogContent>

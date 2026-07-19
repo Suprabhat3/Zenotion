@@ -28,7 +28,20 @@ export const updateNoteSchema = z
       .string()
       .trim()
       .max(1000)
-      .startsWith("https://", "Cover image must be an https URL.")
+      .url("Cover image must be a valid URL.")
+      .refine(
+        (value) => {
+          try {
+            const url = new URL(value);
+            if (url.protocol !== "https:") return false;
+            const host = url.hostname.toLowerCase();
+            return host === "ik.imagekit.io" || host.endsWith(".imagekit.io");
+          } catch {
+            return false;
+          }
+        },
+        { message: "Cover image must be hosted on ImageKit." },
+      )
       .nullish(),
     folderId: z.string().cuid().nullish(),
     tagIds: z.array(z.string().cuid()).optional(),
@@ -109,9 +122,12 @@ const base64String = z
   .min(1)
   .regex(/^[A-Za-z0-9+/]+={0,2}$/, "Must be base64.");
 
+/** Max ciphertext size — aligned with PATCH `content` for secret autosaves. */
+const SECRET_CIPHERTEXT_MAX = 140_000;
+
 export const markNoteSecretSchema = z.object({
   noteId: z.string().cuid(),
-  ciphertext: base64String.max(400_000),
+  ciphertext: base64String.max(SECRET_CIPHERTEXT_MAX),
   iv: base64String.max(64),
   salt: base64String.max(64),
   verifier: base64String.max(128),

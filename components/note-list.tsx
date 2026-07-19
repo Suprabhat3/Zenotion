@@ -52,7 +52,7 @@ function NoteMeta({
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <span>{formatDate(note.updatedAt)}</span>
         <span>•</span>
-        <span>{getReadingTime(note.content)}</span>
+        <span>{note.isSecret ? "Encrypted" : getReadingTime(note.content)}</span>
 </div>
       {note.tags.length > 0 && (
         <div className={cn("flex flex-wrap gap-1.5", compact && "hidden sm:flex")}>
@@ -73,16 +73,22 @@ function NoteMeta({
 function NoteStatusIcons({ note }: { note: NoteSummary }) {
   if (!note.isFavorite && !note.isPublic && !note.isSecret) return null;
 
+  const statusParts: string[] = [];
+  if (note.isFavorite) statusParts.push("Favorite");
+  if (note.isPublic) statusParts.push("Public");
+  if (note.isSecret) statusParts.push("Encrypted");
+
   return (
     <span className="flex shrink-0 items-center gap-1.5">
+      <span className="sr-only">{statusParts.join(", ")}</span>
       {note.isFavorite && (
-        <Star className="h-4 w-4 fill-amber-400 text-amber-400" aria-label="Favorite" />
+        <Star className="h-4 w-4 fill-amber-400 text-amber-400" aria-hidden />
       )}
       {note.isPublic && (
-        <Globe className="h-4 w-4 text-muted-foreground" aria-label="Public" />
+        <Globe className="h-4 w-4 text-muted-foreground" aria-hidden />
       )}
       {note.isSecret && (
-        <Lock className="h-4 w-4 text-muted-foreground" aria-label="Encrypted" />
+        <Lock className="h-4 w-4 text-muted-foreground" aria-hidden />
       )}
     </span>
   );

@@ -21,7 +21,7 @@ export function CopySharedNoteButton({
 
   function handleClick() {
     if (!isLoggedIn) {
-      router.push(`/signin?redirect=/share/${shareSlug}`);
+      router.push(`/login?next=/share/${shareSlug}`);
       return;
     }
 

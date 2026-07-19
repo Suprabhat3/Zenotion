@@ -12,6 +12,8 @@ export type ApiErrorCode =
   | "FORBIDDEN"
   | "NOT_FOUND"
   | "CONFLICT"
+  | "RATE_LIMITED"
+  | "TIMEOUT"
   | "INTERNAL_ERROR"
   | "SERVICE_UNAVAILABLE";
 
@@ -21,6 +23,8 @@ const STATUS_BY_CODE: Record<ApiErrorCode, number> = {
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,
+  RATE_LIMITED: 429,
+  TIMEOUT: 504,
   INTERNAL_ERROR: 500,
   SERVICE_UNAVAILABLE: 503,
 };
