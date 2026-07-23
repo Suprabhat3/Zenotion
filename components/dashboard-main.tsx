@@ -8,6 +8,7 @@ import { createNote } from "@/app/(app)/notes/actions";
 import { NoteList } from "@/components/note-list";
 import { NoteViewToggle, type NotesViewMode } from "@/components/note-view-toggle";
 import { Button } from "@/components/ui/button";
+import { CreateNoteSubmitButton } from "@/components/create-note-submit-button";
 
 const NOTES_VIEW_KEY = "zenotion-notes-view";
 const NOTES_VIEW_CHANGE_EVENT = "zenotion-notes-view-change";
@@ -121,10 +122,10 @@ export function DashboardMain({
               {createFolderId && (
                 <form action={createNote}>
                   <input type="hidden" name="folderId" value={createFolderId} />
-                  <Button type="submit" className="gap-2">
+                  <CreateNoteSubmitButton className="gap-2">
                     <Plus className="h-4 w-4" />
                     {createLabel}
-                  </Button>
+                  </CreateNoteSubmitButton>
                 </form>
               )}
               <NoteViewToggle view={view} onChange={handleViewChange} />

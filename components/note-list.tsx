@@ -6,7 +6,7 @@ import type { NoteSummary } from "@/lib/types";
 import type { NotesViewMode } from "@/components/note-view-toggle";
 import { cn } from "@/lib/utils";
 import { createNote } from "@/app/(app)/notes/actions";
-import { Button } from "@/components/ui/button";
+import { CreateNoteSubmitButton } from "@/components/create-note-submit-button";
 
 type NoteListProps = {
   notes: NoteSummary[];
@@ -195,10 +195,10 @@ export function NoteList({
           {createFolderId && (
             <input type="hidden" name="folderId" value={createFolderId} />
           )}
-          <Button type="submit" className="gap-2">
+          <CreateNoteSubmitButton className="gap-2">
             <Plus className="h-4 w-4" />
             {createLabel}
-          </Button>
+          </CreateNoteSubmitButton>
         </form>
       </div>
     );
