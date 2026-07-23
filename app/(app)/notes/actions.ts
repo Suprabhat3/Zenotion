@@ -94,7 +94,7 @@ export async function createNote(formData: FormData) {
   redirect(`/notes/${note.id}`);
 }
 
-async function assertNotSecret(userId: string, noteId: string) {
+async function assertEditableNote(userId: string, noteId: string) {
   const note = await prisma.note.findFirst({
     where: { id: noteId, userId },
     select: { isSecret: true },
@@ -114,8 +114,7 @@ export async function renameNote(formData: FormData) {
     title: formData.get("title"),
   });
 
-  await assertNoteOwnership(user.id, input.noteId);
-  await assertNotSecret(user.id, input.noteId);
+  await assertEditableNote(user.id, input.noteId);
 
   await prisma.note.update({
     where: { id: input.noteId },
@@ -136,8 +135,7 @@ export async function updateNoteContent(formData: FormData) {
     noteId: formData.get("noteId"),
   });
 
-  await assertNoteOwnership(user.id, noteId);
-  await assertNotSecret(user.id, noteId);
+  await assertEditableNote(user.id, noteId);
 
   await prisma.note.update({
     where: { id: noteId },
@@ -155,8 +153,10 @@ export async function moveNote(formData: FormData) {
     folderId: formData.get("folderId") === "" ? null : formData.get("folderId"),
   });
 
-  await assertNoteOwnership(user.id, input.noteId);
-  await assertFolderOwnership(user.id, input.folderId);
+  await Promise.all([
+    assertNoteOwnership(user.id, input.noteId),
+    assertFolderOwnership(user.id, input.folderId),
+  ]);
 
   await prisma.note.update({
     where: { id: input.noteId },
@@ -537,12 +537,13 @@ export async function assignNoteTags(formData: FormData) {
     tagIds: formData.getAll("tagIds"),
   });
 
-  await assertNoteOwnership(user.id, input.noteId);
-
-  const ownedTags = await prisma.tag.findMany({
-    where: { userId: user.id, id: { in: input.tagIds } },
-    select: { id: true },
-  });
+  const [, ownedTags] = await Promise.all([
+    assertNoteOwnership(user.id, input.noteId),
+    prisma.tag.findMany({
+      where: { userId: user.id, id: { in: input.tagIds } },
+      select: { id: true },
+    }),
+  ]);
   if (ownedTags.length !== input.tagIds.length) {
     throw new Error("One or more tags not found.");
   }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { ComponentType, SVGProps } from "react";
+import { Suspense, type ComponentType, type SVGProps } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -9,7 +9,6 @@ import {
   Globe,
   Heart,
   Keyboard,
-  Layers,
   Save,
   Shield,
   Sparkles,
@@ -20,6 +19,7 @@ import { LandingFreePromise } from "@/components/landing-free-promise";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { getCurrentUser } from "@/lib/session";
+import type { AuthUser } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "About",
@@ -151,12 +151,47 @@ const FADE_DELAYS = [
   "public-fade-up-delay-5",
 ] as const;
 
-export default async function AboutPage() {
-  const user = await getCurrentUser();
+function AboutActions({ user }: { user: AuthUser | null }) {
+  return (
+    <>
+      {user ? (
+        <Button size="lg" asChild>
+          <Link href="/dashboard">
+            Open dashboard
+            <ArrowRight className="ml-1 h-4 w-4" />
+          </Link>
+        </Button>
+      ) : (
+        <Button size="lg" asChild>
+          <Link href="/signup">
+            Create free account
+            <ArrowRight className="ml-1 h-4 w-4" />
+          </Link>
+        </Button>
+      )}
+      <Button size="lg" variant="outline" asChild>
+        <Link href="/templates">Browse templates</Link>
+      </Button>
+    </>
+  );
+}
+
+async function AboutActionsLoader({
+  userPromise,
+}: {
+  userPromise: Promise<AuthUser | null>;
+}) {
+  return <AboutActions user={await userPromise} />;
+}
+
+export default function AboutPage() {
+  const userPromise = getCurrentUser();
 
   return (
     <div className="min-h-svh clay-page-bg">
-      <SiteHeader />
+      <Suspense fallback={null}>
+        <SiteHeader userPromise={userPromise} />
+      </Suspense>
 
       <main>
         {/* Hero */}
@@ -375,24 +410,9 @@ export default async function AboutPage() {
               markdown within minutes.
             </p>
             <div className="public-fade-up public-fade-up-delay-2 flex flex-wrap justify-center gap-3">
-              {user ? (
-                <Button size="lg" asChild>
-                  <Link href="/dashboard">
-                    Open dashboard
-                    <ArrowRight className="ml-1 h-4 w-4" />
-                  </Link>
-                </Button>
-              ) : (
-                <Button size="lg" asChild>
-                  <Link href="/signup">
-                    Create free account
-                    <ArrowRight className="ml-1 h-4 w-4" />
-                  </Link>
-                </Button>
-              )}
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/templates">Browse templates</Link>
-              </Button>
+              <Suspense fallback={<AboutActions user={null} />}>
+                <AboutActionsLoader userPromise={userPromise} />
+              </Suspense>
             </div>
           </div>
         </section>

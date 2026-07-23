@@ -24,12 +24,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function SharePage({ params }: PageProps) {
   const { slug } = await params;
-  const [note, currentUser] = await Promise.all([
-    getPublicNoteBySlug(slug),
-    getCurrentUser(),
-  ]);
+  const note = await getPublicNoteBySlug(slug);
 
   if (!note) notFound();
+
+  const currentUser = await getCurrentUser();
 
   const formattedDate = new Intl.DateTimeFormat("en", {
     month: "long",
@@ -39,7 +38,11 @@ export default async function SharePage({ params }: PageProps) {
 
   return (
     <div className="min-h-svh clay-page-bg">
-      <SiteHeader showNavLinks={false} logoHref="/" />
+      <SiteHeader
+        showNavLinks={false}
+        logoHref="/"
+        userPromise={Promise.resolve(currentUser)}
+      />
       <article className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <p className="public-fade-up mb-4 text-xs font-medium text-muted-foreground">
           Shared note

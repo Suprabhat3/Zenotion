@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { ComponentType, SVGProps } from "react";
+import { Suspense, type ComponentType, type SVGProps } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -23,6 +23,7 @@ import { LandingSecretNote } from "@/components/landing-secret-note";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { getCurrentUser } from "@/lib/session";
+import type { AuthUser } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Zenotion — Notes for developers",
@@ -144,12 +145,69 @@ const FADE_DELAYS = [
   "public-fade-up-delay-5",
 ] as const;
 
-export default async function HomePage() {
-  const user = await getCurrentUser();
+function HomePrimaryActions({ user }: { user: AuthUser | null }) {
+  return (
+    <>
+      {user ? (
+        <Button size="lg" className="w-full sm:w-auto" asChild>
+          <Link href="/dashboard">
+            Open dashboard
+            <ArrowRight className="ml-1 h-4 w-4" />
+          </Link>
+        </Button>
+      ) : (
+        <Button size="lg" className="w-full sm:w-auto" asChild>
+          <Link href="/signup">
+            <span className="sm:hidden">Start free</span>
+            <span className="hidden sm:inline">Start free — no card needed</span>
+            <ArrowRight className="ml-1 h-4 w-4" />
+          </Link>
+        </Button>
+      )}
+    </>
+  );
+}
+
+async function HomePrimaryActionsLoader({
+  userPromise,
+}: {
+  userPromise: Promise<AuthUser | null>;
+}) {
+  return <HomePrimaryActions user={await userPromise} />;
+}
+
+function HomeBottomActions({ user }: { user: AuthUser | null }) {
+  return (
+    <>
+      {user ? (
+        <Button size="lg" asChild>
+          <Link href="/dashboard">Go to dashboard</Link>
+        </Button>
+      ) : (
+        <Button size="lg" asChild>
+          <Link href="/signup">Create free account</Link>
+        </Button>
+      )}
+    </>
+  );
+}
+
+async function HomeBottomActionsLoader({
+  userPromise,
+}: {
+  userPromise: Promise<AuthUser | null>;
+}) {
+  return <HomeBottomActions user={await userPromise} />;
+}
+
+export default function HomePage() {
+  const userPromise = getCurrentUser();
 
   return (
     <div className="min-h-svh clay-page-bg">
-      <SiteHeader />
+      <Suspense fallback={null}>
+        <SiteHeader userPromise={userPromise} />
+      </Suspense>
 
       <main>
         {/* Hero */}
@@ -189,24 +247,9 @@ export default async function HomePage() {
             </p>
 
             <div className="public-fade-up public-fade-up-delay-4 order-5 flex w-full max-w-sm flex-col gap-2.5 sm:order-6 sm:max-w-none sm:flex-row sm:flex-wrap sm:justify-center sm:gap-3">
-              {user ? (
-                <Button size="lg" className="w-full sm:w-auto" asChild>
-                  <Link href="/dashboard">
-                    Open dashboard
-                    <ArrowRight className="ml-1 h-4 w-4" />
-                  </Link>
-                </Button>
-              ) : (
-                <Button size="lg" className="w-full sm:w-auto" asChild>
-                  <Link href="/signup">
-                    <span className="sm:hidden">Start free</span>
-                    <span className="hidden sm:inline">
-                      Start free — no card needed
-                    </span>
-                    <ArrowRight className="ml-1 h-4 w-4" />
-                  </Link>
-                </Button>
-              )}
+              <Suspense fallback={<HomePrimaryActions user={null} />}>
+                <HomePrimaryActionsLoader userPromise={userPromise} />
+              </Suspense>
               <Button
                 size="lg"
                 variant="outline"
@@ -328,15 +371,9 @@ export default async function HomePage() {
               searchable, and one click away.
             </p>
             <div className="public-fade-up public-fade-up-delay-2 flex flex-wrap justify-center gap-3">
-              {user ? (
-                <Button size="lg" asChild>
-                  <Link href="/dashboard">Go to dashboard</Link>
-                </Button>
-              ) : (
-                <Button size="lg" asChild>
-                  <Link href="/signup">Create free account</Link>
-                </Button>
-              )}
+              <Suspense fallback={<HomeBottomActions user={null} />}>
+                <HomeBottomActionsLoader userPromise={userPromise} />
+              </Suspense>
               <Button size="lg" variant="outline" asChild>
                 <Link href="/about">See how it works</Link>
               </Button>
