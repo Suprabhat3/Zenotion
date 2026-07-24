@@ -13,7 +13,7 @@ export default async function AppLayout({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const sidebar = await getSidebarData(user.id);
+  const sidebarPromise = getSidebarData(user.id);
 
   return (
     <div className="flex min-h-svh flex-col clay-page-bg">
@@ -25,7 +25,7 @@ export default async function AppLayout({
           logoHref="/dashboard"
         />
       </header>
-      <AppShell sidebar={sidebar}>{children}</AppShell>
+      <AppShell sidebarPromise={sidebarPromise}>{children}</AppShell>
     </div>
   );
 }

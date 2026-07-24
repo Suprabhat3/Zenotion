@@ -136,6 +136,7 @@ export function NoteEditor({
   const router = useRouter();
   const [secretDialogOpen, setSecretDialogOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const [removeSecretOpen, setRemoveSecretOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [title, setTitle] = useState(note.title);
@@ -489,6 +490,7 @@ export function NoteEditor({
   }
 
   async function handleDelete() {
+    setDeleteOpen(false);
     const formData = new FormData();
     formData.set("noteId", note.id);
     captureEvent("note_deleted");
@@ -804,7 +806,7 @@ export function NoteEditor({
             <CopyButton text={content} label="Copy" />
           </div>
 
-          <DropdownMenu>
+          <DropdownMenu open={actionsOpen} onOpenChange={setActionsOpen}>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1.5">
                 <MoreHorizontal className="h-4 w-4" />
@@ -901,7 +903,11 @@ export function NoteEditor({
                 Print / Save as PDF
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => setDeleteOpen(true)}
+                onSelect={(event) => {
+                  event.preventDefault();
+                  setActionsOpen(false);
+                  setDeleteOpen(true);
+                }}
                 className="text-destructive focus:text-destructive"
                 aria-label="Delete note"
               >
