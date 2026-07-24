@@ -59,7 +59,6 @@ export async function PATCH(request: Request, context: RouteContext) {
     assertSameOriginMutation(request);
     const user = await requireUser();
     const { id } = await context.params;
-    await getOwnedNote(user.id, id);
 
     const body: unknown = await request.json();
     const input = parseOrThrow(updateNoteSchema, body);

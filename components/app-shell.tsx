@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  use,
   type ReactNode,
 } from "react";
 import { PanelLeft } from "lucide-react";
@@ -23,7 +24,7 @@ const SIDEBAR_COLLAPSED_KEY = "zenotion-sidebar-collapsed";
 const SIDEBAR_CHANGE_EVENT = "zenotion-sidebar-change";
 
 type AppShellProps = {
-  sidebar: SidebarData;
+  sidebarPromise: Promise<SidebarData>;
   children: ReactNode;
 };
 
@@ -82,7 +83,33 @@ function SidebarFallback({ collapsed }: { collapsed: boolean }) {
   );
 }
 
-export function AppShell({ sidebar, children }: AppShellProps) {
+function SidebarContent({
+  sidebarPromise,
+  collapsed,
+  isMobile,
+  onToggleCollapsed,
+  onMobileClose,
+}: {
+  sidebarPromise: Promise<SidebarData>;
+  collapsed: boolean;
+  isMobile: boolean;
+  onToggleCollapsed: () => void;
+  onMobileClose: () => void;
+}) {
+  const sidebar = use(sidebarPromise);
+
+  return (
+    <AppSidebar
+      sidebar={sidebar}
+      collapsed={collapsed}
+      onToggleCollapsed={onToggleCollapsed}
+      isMobile={isMobile}
+      onMobileClose={onMobileClose}
+    />
+  );
+}
+
+export function AppShell({ sidebarPromise, children }: AppShellProps) {
   const isMobile = useMediaQuery(MOBILE_SIDEBAR_QUERY);
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMobileDrawerOpen = isMobile && mobileOpen;
@@ -164,8 +191,8 @@ export function AppShell({ sidebar, children }: AppShellProps) {
         )}
       >
         <Suspense fallback={<SidebarFallback collapsed={isCollapsed} />}>
-          <AppSidebar
-            sidebar={sidebar}
+          <SidebarContent
+            sidebarPromise={sidebarPromise}
             collapsed={isCollapsed}
             onToggleCollapsed={toggleCollapsed}
             isMobile={isMobile}

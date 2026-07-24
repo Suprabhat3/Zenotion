@@ -9,6 +9,7 @@ import {
   Hash,
   Keyboard,
   Lock,
+  Loader2,
   PanelLeft,
   PanelLeftClose,
   Plus,
@@ -21,6 +22,7 @@ import { modKeyLabel, useIsApplePlatform } from "@/lib/platform";
 import type { SidebarData } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { createNote } from "@/app/(app)/notes/actions";
+import { CreateNoteSubmitButton } from "@/components/create-note-submit-button";
 import { CreateFolderDialog } from "@/components/create-folder-dialog";
 import { CreateTagDialog } from "@/components/create-tag-dialog";
 import { FolderActionsMenu } from "@/components/folder-actions-menu";
@@ -201,21 +203,29 @@ export function AppSidebar({
       >
         <form action={createNote} className="w-full">
           {collapsed ? (
-            <Button
-              type="submit"
+            <CreateNoteSubmitButton
               variant="outline"
               size="icon"
               className="mx-auto h-9 w-9 clay-surface"
               title="New note"
               aria-label="New note"
+              pendingChildren={
+                <>
+                  <Loader2 className="animate-spin" aria-hidden="true" />
+                  <span className="sr-only">Creating note…</span>
+                </>
+              }
             >
               <Plus className="h-4 w-4" />
-            </Button>
+            </CreateNoteSubmitButton>
           ) : (
-            <Button type="submit" variant="outline" className={newNoteButtonClassName}>
+            <CreateNoteSubmitButton
+              variant="outline"
+              className={newNoteButtonClassName}
+            >
               <Plus className="h-4 w-4" />
               New note
-            </Button>
+            </CreateNoteSubmitButton>
           )}
         </form>
 
@@ -270,15 +280,14 @@ export function AppSidebar({
                 message="Notes you create will appear here for quick access."
                 action={
                   <form action={createNote}>
-                    <Button
-                      type="submit"
+                    <CreateNoteSubmitButton
                       variant="outline"
                       size="sm"
                       className="h-8 gap-1.5 text-xs clay-surface"
                     >
                       <Plus className="h-3.5 w-3.5" />
                       New note
-                    </Button>
+                    </CreateNoteSubmitButton>
                   </form>
                 }
               />
