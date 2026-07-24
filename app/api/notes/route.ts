@@ -9,7 +9,7 @@ export async function GET() {
     const user = await requireUser();
 
     const notes = await prisma.note.findMany({
-      where: { userId: user.id },
+      where: { userId: user.id, deletedAt: null },
       orderBy: { updatedAt: "desc" },
       select: {
         id: true,

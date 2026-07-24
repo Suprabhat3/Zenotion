@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { createNoteVersionSnapshot } from "@/lib/note-versions";
+import { syncNoteLinks } from "@/lib/note-links";
 import { ApiError, ok, handleApiError } from "@/lib/api";
 import { assertSameOriginMutation } from "@/lib/request-origin";
 import { requireUser } from "@/lib/session";
@@ -33,7 +34,7 @@ const noteDetailSelect = {
 
 async function getOwnedNote(userId: string, noteId: string) {
   const note = await prisma.note.findFirst({
-    where: { id: noteId, userId },
+    where: { id: noteId, userId, deletedAt: null },
     select: noteDetailSelect,
   });
   if (!note) {
@@ -159,6 +160,12 @@ export async function PATCH(request: Request, context: RouteContext) {
         })
       : await getOwnedNote(user.id, id);
 
+    // Keep the backlink index in sync with the note's wiki links. Secret notes
+    // store ciphertext, so they never contribute links.
+    if (!existing.isSecret && contentChanging && input.content !== undefined) {
+      await syncNoteLinks(user.id, id, input.content);
+    }
+
     return ok(note, { message: "Note updated." });
   } catch (error) {
     return handleApiError(error);
@@ -170,18 +177,28 @@ export async function DELETE(request: Request, context: RouteContext) {
     assertSameOriginMutation(request);
     const user = await requireUser();
     const { id } = await context.params;
-    await getOwnedNote(user.id, id);
+    const note = await getOwnedNote(user.id, id);
 
-    // Deleting the secret note frees the user's secret-note credit.
-    await prisma.$transaction([
-      prisma.user.updateMany({
-        where: { id: user.id, secretNoteId: id },
-        data: { secretNoteId: null },
-      }),
-      prisma.note.delete({ where: { id } }),
-    ]);
+    if (note.isSecret) {
+      // Secret notes skip the trash: they're hard-deleted immediately, which
+      // frees the user's secret-note credit predictably.
+      await prisma.$transaction([
+        prisma.user.updateMany({
+          where: { id: user.id, secretNoteId: id },
+          data: { secretNoteId: null },
+        }),
+        prisma.note.delete({ where: { id } }),
+      ]);
+      return ok({ id }, { message: "Note deleted." });
+    }
 
-    return ok({ id }, { message: "Note deleted." });
+    // Normal notes are soft-deleted into the trash and can be restored.
+    await prisma.note.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
+    return ok({ id }, { message: "Note moved to trash." });
   } catch (error) {
     return handleApiError(error);
   }

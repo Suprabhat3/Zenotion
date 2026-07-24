@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
-import { useEditor, EditorContent, type Editor } from "@tiptap/react";
+import {
+  useEditor,
+  EditorContent,
+  ReactNodeViewRenderer,
+  type Editor,
+} from "@tiptap/react";
 import type { EditorView } from "@tiptap/pm/view";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -20,13 +25,23 @@ import {
 import { Markdown } from "tiptap-markdown";
 import { common, createLowlight } from "lowlight";
 import { PreserveBlankLinesParagraph } from "@/components/tiptap/preserve-blank-lines-paragraph";
+import { CodeBlockLanguageSelect } from "@/components/tiptap/code-block-language-select";
 import { SlashCommand } from "@/components/tiptap/slash-command";
+import { WikiLink } from "@/components/tiptap/wiki-link";
 import { RichEditorToolbar } from "@/components/rich-editor-toolbar";
 import type { EditorSelection } from "@/lib/types";
 import { encodeMarkdownBlankLines } from "@/lib/markdown-blank-lines";
 import { cn } from "@/lib/utils";
 
 const lowlight = createLowlight(common);
+
+// Code blocks gain a language picker in the rich editor. The NodeView writes the
+// `language` attribute, which lowlight and the markdown serializer both read.
+const CodeBlockWithLanguagePicker = CodeBlockLowlight.extend({
+  addNodeView() {
+    return ReactNodeViewRenderer(CodeBlockLanguageSelect);
+  },
+});
 
 function getEditorMarkdown(editor: ReturnType<typeof useEditor>): string {
   if (!editor) return "";
@@ -42,6 +57,8 @@ type RichTextEditorProps = {
   className?: string;
   /** When true, the parent renders the formatting toolbar (e.g. fixed above the scroll area). */
   hideToolbar?: boolean;
+  /** The note being edited — used to exclude it from `[[` link suggestions. */
+  noteId?: string | null;
   onEditorReady?: (editor: Editor) => void;
   onSelectionChange?: (
     selection: EditorSelection | null,
@@ -55,6 +72,7 @@ export function RichTextEditor({
   onChange,
   className,
   hideToolbar = false,
+  noteId = null,
   onEditorReady,
   onSelectionChange,
   replaceSelectionRef,
@@ -99,6 +117,7 @@ export function RichTextEditor({
       }),
       PreserveBlankLinesParagraph,
       SlashCommand,
+      WikiLink.configure({ currentNoteId: noteId }),
       Placeholder.configure({
         placeholder: "Start writing, or press / for commands…",
       }),
@@ -106,7 +125,7 @@ export function RichTextEditor({
       Underline,
       TaskList,
       TaskItem.configure({ nested: true }),
-      CodeBlockLowlight.configure({ lowlight }),
+      CodeBlockWithLanguagePicker.configure({ lowlight }),
       Image.configure({ inline: false, allowBase64: false }),
       TableKit.configure({
         table: { resizable: true },

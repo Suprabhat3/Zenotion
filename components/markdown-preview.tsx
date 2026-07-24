@@ -7,6 +7,7 @@ import rehypeHighlight from "rehype-highlight";
 import rehypeSanitize from "rehype-sanitize";
 import { CopyButton } from "@/components/copy-button";
 import { MermaidDiagram } from "@/components/mermaid-diagram";
+import { formatLanguageLabel } from "@/lib/code-languages";
 import { markdownSanitizeSchema } from "@/lib/markdown-sanitize";
 import { cn } from "@/lib/utils";
 
@@ -25,57 +26,6 @@ function extractText(children: ReactNode): string {
     return extractText(children.props.children);
   }
   return "";
-}
-
-const LANGUAGE_LABELS: Record<string, string> = {
-  js: "JavaScript",
-  javascript: "JavaScript",
-  jsx: "JSX",
-  ts: "TypeScript",
-  typescript: "TypeScript",
-  tsx: "TSX",
-  py: "Python",
-  python: "Python",
-  rb: "Ruby",
-  ruby: "Ruby",
-  go: "Go",
-  rust: "Rust",
-  rs: "Rust",
-  java: "Java",
-  kotlin: "Kotlin",
-  swift: "Swift",
-  c: "C",
-  cpp: "C++",
-  csharp: "C#",
-  cs: "C#",
-  php: "PHP",
-  sql: "SQL",
-  bash: "Bash",
-  sh: "Shell",
-  shell: "Shell",
-  zsh: "Zsh",
-  powershell: "PowerShell",
-  ps1: "PowerShell",
-  json: "JSON",
-  yaml: "YAML",
-  yml: "YAML",
-  toml: "TOML",
-  xml: "XML",
-  html: "HTML",
-  css: "CSS",
-  scss: "SCSS",
-  md: "Markdown",
-  markdown: "Markdown",
-  graphql: "GraphQL",
-  dockerfile: "Dockerfile",
-  docker: "Dockerfile",
-  text: "Plain text",
-  plaintext: "Plain text",
-};
-
-function formatLanguageLabel(language: string): string {
-  const key = language.toLowerCase();
-  return LANGUAGE_LABELS[key] ?? language.toUpperCase();
 }
 
 function CodeBlock({
@@ -224,6 +174,18 @@ function createMarkdownComponents(forPrint: boolean): Components {
     return <>{children}</>;
   },
   a({ href, children }) {
+    // Internal note (wiki) links stay same-tab so the app's soft-nav guard
+    // handles them; external links open in a new tab.
+    const isInternal = typeof href === "string" && href.startsWith("/notes/");
+
+    if (isInternal && !forPrint) {
+      return (
+        <a href={href} className="markdown-link markdown-wiki-link">
+          {children}
+        </a>
+      );
+    }
+
     return (
       <a
         href={href}

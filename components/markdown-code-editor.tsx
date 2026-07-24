@@ -5,9 +5,16 @@ import CodeMirror from "@uiw/react-codemirror";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { languages } from "@codemirror/language-data";
 import type { ViewUpdate } from "@codemirror/view";
-import { EditorView } from "@codemirror/view";
+import { EditorView, keymap } from "@codemirror/view";
+import {
+  highlightSelectionMatches,
+  openSearchPanel,
+  search,
+  searchKeymap,
+} from "@codemirror/search";
 import type { EditorSelection } from "@/lib/types";
 import { getCodeMirrorTheme } from "@/lib/codemirror-theme";
+import { createWikiLinkCompletion } from "@/lib/codemirror-wiki-link";
 import {
   getImageFiles,
   markdownImage,
@@ -20,6 +27,8 @@ type MarkdownCodeEditorProps = {
   onChange: (value: string) => void;
   className?: string;
   placeholder?: string;
+  /** The note being edited — used to exclude it from `[[` link suggestions. */
+  noteId?: string | null;
   onSelectionChange?: (
     selection: EditorSelection | null,
     rect: DOMRect | null,
@@ -129,6 +138,7 @@ export function MarkdownCodeEditor({
   onChange,
   className,
   placeholder = "Write markdown here…",
+  noteId = null,
   onSelectionChange,
   replaceSelectionRef,
 }: MarkdownCodeEditorProps) {
@@ -168,11 +178,28 @@ export function MarkdownCodeEditor({
   const extensions = useMemo(
     () => [
       markdown({ base: markdownLanguage, codeLanguages: languages }),
+      // `[[` note-link completion, scoped to markdown context (not code fences).
+      markdownLanguage.data.of({
+        autocomplete: createWikiLinkCompletion(() => noteId),
+      }),
       EditorView.lineWrapping,
       imagePasteDropHandlers,
+      // In-note find & replace: Cmd/Ctrl+F opens find; Cmd/Ctrl+Alt+F opens
+      // the panel with the replace row. The searchKeymap also wires
+      // Enter/Shift-Enter to cycle matches and the replace controls.
+      search({ top: true }),
+      highlightSelectionMatches(),
+      keymap.of([
+        ...searchKeymap,
+        {
+          key: "Mod-Alt-f",
+          preventDefault: true,
+          run: openSearchPanel,
+        },
+      ]),
       ...getCodeMirrorTheme(isDark),
     ],
-    [isDark],
+    [isDark, noteId],
   );
 
   return (
@@ -190,7 +217,13 @@ export function MarkdownCodeEditor({
           highlightActiveLine: true,
           bracketMatching: true,
           closeBrackets: true,
-          autocompletion: false,
+          // Surfaces completions from languages inside fenced code blocks
+          // (```ts, ```html, …). Triggered on typing or Ctrl/Cmd+Space.
+          autocompletion: true,
+          // Search is provided explicitly via the `search` extension above so
+          // we control the panel placement, keymap, and theming.
+          searchKeymap: false,
+          highlightSelectionMatches: false,
         }}
         className="h-full [&_.cm-editor]:h-full [&_.cm-editor]:bg-background [&_.cm-editor]:outline-none [&_.cm-scroller]:min-h-full"
       />

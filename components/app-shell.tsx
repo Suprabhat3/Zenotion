@@ -16,6 +16,7 @@ import type { SidebarData } from "@/lib/types";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AiSettingsHost } from "@/components/ai-settings-host";
 import { QuickSwitcher } from "@/components/quick-switcher";
+import { ShortcutsDialog } from "@/components/shortcuts-dialog";
 import { Button } from "@/components/ui/button";
 
 const SIDEBAR_COLLAPSED_KEY = "zenotion-sidebar-collapsed";
@@ -194,6 +195,7 @@ export function AppShell({ sidebar, children }: AppShellProps) {
       </main>
       <AiSettingsHost />
       <QuickSwitcher />
+      <ShortcutsDialog />
     </div>
   );
 }

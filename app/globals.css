@@ -1053,6 +1053,22 @@ body {
   color: #60a5fa;
 }
 
+/* Wiki links to other notes — a subtle bracketed accent to set them apart. */
+.prose-note .markdown-wiki-link {
+  text-decoration: none;
+  font-weight: 500;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+}
+.prose-note .markdown-wiki-link::before {
+  content: "🔗 ";
+  opacity: 0.55;
+  font-size: 0.85em;
+}
+.prose-note .markdown-wiki-link:hover {
+  opacity: 1;
+  border-bottom-color: currentColor;
+}
+
 /* Code blocks — square edges, real left padding (overrides .prose-note pre code { padding: 0 }) */
 .prose-note .code-block-group {
   max-width: 100%;

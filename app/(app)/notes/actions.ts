@@ -47,6 +47,7 @@ function verifierMatches(stored: string | null, provided: string): boolean {
 function revalidateApp() {
   revalidatePath("/dashboard");
   revalidatePath("/notes", "layout");
+  revalidatePath("/trash");
 }
 
 async function assertNoteOwnership(userId: string, noteId: string) {
@@ -234,9 +235,73 @@ export async function deleteNote(formData: FormData) {
     noteId: formData.get("noteId"),
   });
 
-  await assertNoteOwnership(user.id, noteId);
+  const note = await prisma.note.findFirst({
+    where: { id: noteId, userId: user.id },
+    select: { id: true, isSecret: true },
+  });
+  if (!note) {
+    throw new Error("Note not found.");
+  }
 
-  // Deleting the secret note frees the user's secret-note credit.
+  if (note.isSecret) {
+    // Secret notes skip the trash — hard delete immediately and free the
+    // user's secret-note credit so it can be reused predictably.
+    await prisma.$transaction([
+      prisma.user.updateMany({
+        where: { id: user.id, secretNoteId: noteId },
+        data: { secretNoteId: null },
+      }),
+      prisma.note.delete({ where: { id: noteId } }),
+    ]);
+  } else {
+    // Normal notes are soft-deleted into the trash.
+    await prisma.note.update({
+      where: { id: noteId },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  revalidateApp();
+  redirect("/dashboard");
+}
+
+/** Restore a soft-deleted note from the trash. */
+export async function restoreNote(formData: FormData) {
+  const user = await requireUser();
+  const { noteId } = parseOrThrow(noteIdSchema, {
+    noteId: formData.get("noteId"),
+  });
+
+  // Only a currently-trashed note may be restored.
+  const restored = await prisma.note.updateMany({
+    where: { id: noteId, userId: user.id, deletedAt: { not: null } },
+    data: { deletedAt: null },
+  });
+  if (restored.count === 0) {
+    throw new Error("Note not found in trash.");
+  }
+
+  revalidateApp();
+  revalidatePath(`/notes/${noteId}`);
+}
+
+/** Permanently delete a single trashed note (irreversible). */
+export async function permanentlyDeleteNote(formData: FormData) {
+  const user = await requireUser();
+  const { noteId } = parseOrThrow(noteIdSchema, {
+    noteId: formData.get("noteId"),
+  });
+
+  const note = await prisma.note.findFirst({
+    where: { id: noteId, userId: user.id, deletedAt: { not: null } },
+    select: { id: true },
+  });
+  if (!note) {
+    throw new Error("Note not found in trash.");
+  }
+
+  // A trashed secret note is unexpected (secret notes hard-delete), but free
+  // the credit defensively in case one ever lands here.
   await prisma.$transaction([
     prisma.user.updateMany({
       where: { id: user.id, secretNoteId: noteId },
@@ -246,7 +311,33 @@ export async function deleteNote(formData: FormData) {
   ]);
 
   revalidateApp();
-  redirect("/dashboard");
+}
+
+/** Permanently delete every note currently in the user's trash. */
+export async function emptyTrash() {
+  const user = await requireUser();
+
+  const trashed = await prisma.note.findMany({
+    where: { userId: user.id, deletedAt: { not: null } },
+    select: { id: true },
+  });
+  if (trashed.length === 0) {
+    revalidateApp();
+    return;
+  }
+
+  const ids = trashed.map((note) => note.id);
+  await prisma.$transaction([
+    prisma.user.updateMany({
+      where: { id: user.id, secretNoteId: { in: ids } },
+      data: { secretNoteId: null },
+    }),
+    prisma.note.deleteMany({
+      where: { id: { in: ids }, userId: user.id },
+    }),
+  ]);
+
+  revalidateApp();
 }
 
 /**

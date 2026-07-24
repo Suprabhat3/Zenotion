@@ -125,6 +125,63 @@ export function getCodeMirrorTheme(isDark: boolean) {
       color: "var(--muted-foreground)",
       fontStyle: "italic",
     },
+    // Find / replace panel — matched to the app's clay surfaces.
+    ".cm-panels": {
+      backgroundColor: "var(--card)",
+      color: "var(--foreground)",
+      borderBottom: "1px solid var(--border)",
+    },
+    ".cm-panels.cm-panels-top": {
+      borderBottom: "1px solid var(--border)",
+    },
+    ".cm-search": {
+      padding: "8px 10px",
+      display: "flex",
+      flexWrap: "wrap",
+      alignItems: "center",
+      gap: "6px",
+    },
+    ".cm-search .cm-textfield": {
+      backgroundColor: "var(--background)",
+      color: "var(--foreground)",
+      border: "1px solid var(--border)",
+      borderRadius: "6px",
+      padding: "4px 8px",
+      fontSize: "13px",
+    },
+    ".cm-search .cm-button": {
+      backgroundColor: "var(--muted)",
+      backgroundImage: "none",
+      color: "var(--foreground)",
+      border: "1px solid var(--border)",
+      borderRadius: "6px",
+      padding: "4px 10px",
+      fontSize: "13px",
+      cursor: "pointer",
+    },
+    ".cm-search .cm-button:hover": {
+      backgroundColor: "var(--accent)",
+    },
+    ".cm-search label": {
+      fontSize: "12px",
+      color: "var(--muted-foreground)",
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "3px",
+    },
+    ".cm-panel.cm-search [name='close']": {
+      color: "var(--muted-foreground)",
+      cursor: "pointer",
+    },
+    ".cm-searchMatch": {
+      backgroundColor: "color-mix(in srgb, #f59e0b 35%, transparent)",
+    },
+    ".cm-searchMatch.cm-searchMatch-selected": {
+      backgroundColor: "color-mix(in srgb, #f59e0b 65%, transparent)",
+    },
+    ".cm-selectionMatch": {
+      backgroundColor: "color-mix(in srgb, #3b82f6 22%, transparent)",
+    },
   });
 
   return [

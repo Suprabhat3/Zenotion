@@ -6,7 +6,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 async function getOwnedNoteId(userId: string, noteId: string) {
   const note = await prisma.note.findFirst({
-    where: { id: noteId, userId },
+    where: { id: noteId, userId, deletedAt: null },
     select: { id: true, isSecret: true },
   });
   if (!note) {

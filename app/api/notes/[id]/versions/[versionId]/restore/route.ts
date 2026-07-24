@@ -13,7 +13,7 @@ export async function POST(request: Request, context: RouteContext) {
     const { id, versionId } = await context.params;
 
     const note = await prisma.note.findFirst({
-      where: { id, userId: user.id },
+      where: { id, userId: user.id, deletedAt: null },
       select: { id: true, title: true, content: true, isSecret: true },
     });
     if (!note) {

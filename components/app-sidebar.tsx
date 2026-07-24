@@ -7,12 +7,14 @@ import {
   FileText,
   Folder,
   Hash,
+  Keyboard,
   Lock,
   PanelLeft,
   PanelLeftClose,
   Plus,
   Search,
   Star,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { modKeyLabel, useIsApplePlatform } from "@/lib/platform";
@@ -24,6 +26,7 @@ import { CreateTagDialog } from "@/components/create-tag-dialog";
 import { FolderActionsMenu } from "@/components/folder-actions-menu";
 import { TagActionsMenu } from "@/components/tag-actions-menu";
 import { openQuickSwitcher } from "@/components/quick-switcher";
+import { openShortcutsDialog } from "@/components/shortcuts-dialog";
 
 type AppSidebarProps = {
   sidebar: SidebarData;
@@ -468,6 +471,45 @@ export function AppSidebar({
         )}
       >
         <div className="clay-sidebar-separator mb-3" aria-hidden />
+        <Button
+          type="button"
+          variant="ghost"
+          size={collapsed ? "icon" : "sm"}
+          className={cn(
+            "mb-1 text-muted-foreground hover:text-foreground",
+            pathname === "/trash" && "clay-nav-item-active text-foreground",
+            !collapsed && "w-full justify-start gap-2 px-2",
+          )}
+          asChild
+        >
+          <Link
+            href="/trash"
+            onClick={handleNavigate}
+            title="Trash"
+            aria-label="Trash"
+          >
+            <Trash2 className="h-4 w-4" />
+            {collapsed ? null : "Trash"}
+          </Link>
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size={collapsed ? "icon" : "sm"}
+          className={cn(
+            "mb-1 text-muted-foreground hover:text-foreground",
+            !collapsed && "w-full justify-start gap-2 px-2",
+          )}
+          onClick={() => {
+            openShortcutsDialog();
+            onMobileClose?.();
+          }}
+          title="Keyboard shortcuts"
+          aria-label="Keyboard shortcuts"
+        >
+          <Keyboard className="h-4 w-4" />
+          {collapsed ? null : "Keyboard shortcuts"}
+        </Button>
         {isMobile ? (
           <Button
             type="button"

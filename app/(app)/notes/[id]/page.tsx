@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { getUserNote, getSidebarData, getUserSecretNoteId } from "@/lib/notes";
+import {
+  getNoteBacklinks,
+  getUserNote,
+  getSidebarData,
+  getUserSecretNoteId,
+} from "@/lib/notes";
 import { NoteEditor } from "@/components/note-editor";
 import { SecretNoteUnlock } from "@/components/secret-note-unlock";
 
@@ -23,10 +28,11 @@ export default async function NotePage({ params }: PageProps) {
   if (!user) return null;
 
   const { id } = await params;
-  const [note, sidebar, secretNoteId] = await Promise.all([
+  const [note, sidebar, secretNoteId, backlinks] = await Promise.all([
     getUserNote(user.id, id),
     getSidebarData(user.id),
     getUserSecretNoteId(user.id),
+    getNoteBacklinks(user.id, id),
   ]);
 
   if (!note) notFound();
@@ -43,6 +49,7 @@ export default async function NotePage({ params }: PageProps) {
           folders={folders}
           tags={sidebar.tags}
           existingSecretNoteId={secretNoteId}
+          backlinks={backlinks}
         />
       )}
     </div>

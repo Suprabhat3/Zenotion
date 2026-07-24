@@ -138,6 +138,10 @@ model Note {
   secretIv       String? // base64 AES-GCM IV of the current ciphertext (rotates each save)
   secretVerifier String? // base64 hash of a separately derived key; proves passphrase knowledge, cannot decrypt
   shareSlug  String?  @unique
+  // Soft delete: when set, the note lives in the trash and is excluded from all
+  // listings, search, and public routes. Cleared on restore; a permanent delete
+  // removes the row entirely.
+  deletedAt  DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -150,10 +154,30 @@ model Note {
   tags      NoteTag[]
   versions  NoteVersion[]
 
+  // Wiki-style links between notes, maintained from note content on save.
+  outgoingLinks NoteLink[] @relation("NoteLinkSource")
+  incomingLinks NoteLink[] @relation("NoteLinkTarget")
+
   @@index([userId])
+  @@index([userId, deletedAt])
   @@index([folderId])
   @@index([shareSlug])
   @@map("note")
+}
+
+// Directed link from one note to another (`[[wiki link]]`). The row set for a
+// source note is rebuilt whenever its content is saved; querying by target
+// yields the "linked references" (backlinks) for a note.
+model NoteLink {
+  sourceNoteId String
+  targetNoteId String
+
+  source Note @relation("NoteLinkSource", fields: [sourceNoteId], references: [id], onDelete: Cascade)
+  target Note @relation("NoteLinkTarget", fields: [targetNoteId], references: [id], onDelete: Cascade)
+
+  @@id([sourceNoteId, targetNoteId])
+  @@index([targetNoteId])
+  @@map("note_link")
 }
 
 model NoteVersion {

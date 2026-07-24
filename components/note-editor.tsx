@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -14,6 +15,7 @@ import {
   Check,
   Download,
   History,
+  ListTree,
   Loader2,
   Lock,
   LockOpen,
@@ -23,6 +25,7 @@ import {
   Trash2,
   TriangleAlert,
   Type,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -30,6 +33,7 @@ import { siteConfig } from "@/lib/site";
 import type { AiAction } from "@/lib/validators";
 import type { ApiResponse } from "@/lib/api";
 import type { NoteDetail, TagSummary, EditorSelection } from "@/lib/types";
+import type { NoteBacklink } from "@/lib/notes";
 import {
   assignNoteTags,
   deleteNote,
@@ -54,8 +58,11 @@ import {
 import { MarkdownCodeEditor } from "@/components/markdown-code-editor";
 import { NoteFontPicker } from "@/components/note-font-picker";
 import { MarkdownPreview } from "@/components/markdown-preview";
+import { NoteBacklinks } from "@/components/note-backlinks";
+import { NoteOutline } from "@/components/note-outline";
 import { RichEditorToolbar } from "@/components/rich-editor-toolbar";
 import { RichTextEditor } from "@/components/rich-text-editor";
+import { extractHeadings } from "@/lib/note-outline";
 import { getNoteFontOption, NOTE_FONT_OPTIONS, setNoteFont, useNoteFont } from "@/lib/note-font";
 import { captureEvent } from "@/lib/analytics";
 import {
@@ -74,6 +81,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const EDITOR_MODE_KEY = "zenotion-editor-mode";
+const NOTE_PANEL_KEY = "zenotion-note-panel-open";
 
 type SaveStatus = "idle" | "unsaved" | "saving" | "saved" | "error";
 type MarkdownMobilePane = "edit" | "preview";
@@ -94,6 +102,8 @@ type NoteEditorProps = {
   onLock?: () => void;
   /** Id of the user's existing secret note (null when the credit is unused). */
   existingSecretNoteId?: string | null;
+  /** Notes that link to this note ("linked references"). */
+  backlinks?: NoteBacklink[];
 };
 
 type NotePatch = {
@@ -132,6 +142,7 @@ export function NoteEditor({
   secret = null,
   onLock,
   existingSecretNoteId = null,
+  backlinks = [],
 }: NoteEditorProps) {
   const router = useRouter();
   const [secretDialogOpen, setSecretDialogOpen] = useState(false);
@@ -175,6 +186,33 @@ export function NoteEditor({
     useState<MarkdownMobilePane>("edit");
   const noteFont = useNoteFont();
   const noteFontClass = getNoteFontOption(noteFont).className;
+  // The outline/backlinks panel is a floating overlay that is closed by default,
+  // so the note content always has the full width until the user opens it.
+  const [panelOpen, setPanelOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(NOTE_PANEL_KEY) === "true";
+  });
+  const headings = useMemo(() => extractHeadings(content), [content]);
+  const hasPanelContent = headings.length > 0 || backlinks.length > 0;
+  const showPanel = panelOpen && hasPanelContent;
+
+  function togglePanel() {
+    setPanelOpen((current) => {
+      const next = !current;
+      localStorage.setItem(NOTE_PANEL_KEY, String(next));
+      return next;
+    });
+  }
+
+  // Escape closes the overlay panel when it is open.
+  useEffect(() => {
+    if (!showPanel) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setPanelOpen(false);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showPanel]);
 
   const handleRichEditorReady = useCallback((editor: Editor) => {
     setRichEditor(editor);
@@ -678,8 +716,8 @@ export function NoteEditor({
 
   return (
     <>
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="note-editor-panel grid min-h-0 flex-1 grid-rows-[auto_1fr] overflow-hidden">
+    <div className="relative flex min-h-0 flex-1 overflow-hidden">
+      <div className="note-editor-panel grid min-h-0 min-w-0 flex-1 grid-rows-[auto_1fr] overflow-hidden">
         <div className="note-editor-header min-h-0 shrink-0">
         {/* In rich mode the cover/icon/title scroll with the note body so the
             writing area keeps the full height; in markdown (source) mode the
@@ -788,6 +826,18 @@ export function NoteEditor({
 
           <div className="hidden items-center gap-1.5 md:flex">
             <NoteFontPicker />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={togglePanel}
+              disabled={!hasPanelContent}
+              className={cn(showPanel && "text-foreground")}
+              title={showPanel ? "Hide outline" : "Show outline"}
+              aria-label={showPanel ? "Hide outline" : "Show outline"}
+              aria-pressed={showPanel}
+            >
+              <ListTree className="h-4 w-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -972,6 +1022,7 @@ export function NoteEditor({
                 content={content}
                 onChange={setContent}
                 hideToolbar
+                noteId={note.id}
                 onEditorReady={handleRichEditorReady}
                 onSelectionChange={handleSelectionChange}
                 replaceSelectionRef={replaceSelectionRef}
@@ -1039,6 +1090,7 @@ export function NoteEditor({
                 <MarkdownCodeEditor
                   value={content}
                   onChange={setContent}
+                  noteId={note.id}
                   onSelectionChange={handleSelectionChange}
                   replaceSelectionRef={replaceSelectionRef}
                 />
@@ -1065,13 +1117,36 @@ export function NoteEditor({
         </div>
       </div>
 
+      {showPanel && (
+        <div className="absolute right-0 top-0 z-20 flex h-full w-64 flex-col overflow-y-auto border-l border-border/50 bg-card shadow-xl duration-200 animate-in slide-in-from-right-4">
+          <button
+            type="button"
+            onClick={togglePanel}
+            className="absolute right-2 top-2.5 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            aria-label="Close outline"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          {headings.length > 0 && <NoteOutline headings={headings} />}
+          {backlinks.length > 0 && (
+            <NoteBacklinks
+              backlinks={backlinks}
+              className={headings.length > 0 ? "border-t border-border/50" : ""}
+            />
+          )}
+        </div>
+      )}
     </div>
     <ConfirmDialog
       open={deleteOpen}
       onOpenChange={setDeleteOpen}
       title="Delete note"
-      description="Delete this note? This cannot be undone."
-      confirmLabel="Delete note"
+      description={
+        secret
+          ? "Delete this secret note? It is removed permanently and cannot be recovered."
+          : "Move this note to the trash? You can restore it from there later."
+      }
+      confirmLabel={secret ? "Delete note" : "Move to trash"}
       destructive
       onConfirm={handleDelete}
     />
