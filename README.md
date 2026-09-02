@@ -90,8 +90,10 @@ Password: Test@123
 ### 🔐 Authentication
 
 * Email & Password Login
+* 6-digit email verification codes (Resend) before a session is issued
 * Google OAuth Support
 * Secure Session Handling
+* Welcome/onboarding email on first verified sign-up
 
 ### 🎨 User Experience
 
@@ -267,6 +269,11 @@ GOOGLE_CLIENT_SECRET=
 IMAGEKIT_PRIVATE_KEY=
 IMAGEKIT_PUBLIC_KEY=
 IMAGEKIT_URL_ENDPOINT=
+
+# Resend (email verification codes + welcome email) — required for
+# email/password sign-up. EMAIL_FROM must use a Resend-verified domain.
+RESEND_API_KEY=
+EMAIL_FROM="Zenotion <hi@yourdomain.com>"
 ```
 
 ### Run Database Migration
@@ -298,7 +305,7 @@ pnpm build
 
 Verify:
 
-* User Authentication
+* User Authentication (email OTP verification + Google OAuth)
 * Note CRUD
 * Folder Management
 * Tag Management

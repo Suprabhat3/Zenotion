@@ -12,6 +12,7 @@ export function isAnalyticsEnabled(): boolean {
 type AnalyticsEventMap = {
   user_signed_up: { provider: "email" | "google" };
   user_signed_in: { provider: "email" | "google" };
+  user_email_verified: Record<string, never>;
   user_signed_out: Record<string, never>;
   note_saved: { save_trigger: "autosave" | "manual" };
   note_favorited: { is_favorite: boolean };

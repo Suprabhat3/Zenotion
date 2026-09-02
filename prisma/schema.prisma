@@ -29,6 +29,10 @@ model User {
   // marked secret. Enforced here (unique) rather than by counting notes.
   secretNoteId String? @unique
 
+  // Set when the welcome/onboarding email has been dispatched, so it is sent
+  // exactly once per account (after OTP verification or first Google sign-up).
+  onboardingEmailSentAt DateTime?
+
   sessions Session[]
   accounts Account[]
   notes    Note[]

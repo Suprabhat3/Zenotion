@@ -87,7 +87,7 @@ Expected error behavior:
 
 ## Security And Data Rules
 
-- Keep `DATABASE_URL`, `BETTER_AUTH_SECRET`, Google OAuth secrets, and `OPENAI_API_KEY` server-only.
+- Keep `DATABASE_URL`, `BETTER_AUTH_SECRET`, Google OAuth secrets, `RESEND_API_KEY`, and `OPENAI_API_KEY` server-only.
 - Every protected note, folder, and tag query must enforce authenticated user ownership.
 - Public note pages must only return notes where public sharing is enabled.
 - Sanitize markdown preview output.
@@ -114,6 +114,7 @@ Before handing off implementation work, run the available checks:
 Manual verification should cover:
 
 - Email/password auth and Google login.
+- Email verification: sign-up sends a 6-digit Resend OTP, no session exists until it is verified, resend/expiry/wrong-code paths behave, and the welcome email is sent exactly once (after OTP verification, or on first Google sign-up).
 - Creating, reading, updating, and deleting notes.
 - Creating and managing folders/tags.
 - Autosave behavior and failed-save UI.

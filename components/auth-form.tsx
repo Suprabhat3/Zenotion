@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { signIn, signUp } from "@/lib/auth-client";
 import { captureEvent } from "@/lib/analytics";
 import { getSafeNextPath } from "@/lib/safe-redirect";
+import { AuthOtpForm } from "@/components/auth-otp-form";
 import { GoogleIcon } from "@/components/icons/google-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,12 +25,22 @@ import {
 import { BrandLogo } from "@/components/brand-logo";
 type Mode = "login" | "signup";
 
+/**
+ * Credentials the user just entered, held in memory only while the email
+ * verification step is on screen. Keeping the password here lets us complete a
+ * real password sign-in right after the code is verified, so verifying an
+ * email never becomes a credential of its own.
+ */
+type PendingCredentials = { email: string; password: string };
+
 export function AuthForm({ mode }: { mode: Mode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = getSafeNextPath(searchParams.get("next"));
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [pending, setPending] = useState<PendingCredentials | null>(null);
+  const [finishingSignIn, setFinishingSignIn] = useState(false);
 
   const isSignup = mode === "signup";
 
@@ -46,11 +57,23 @@ export function AuthForm({ mode }: { mode: Mode }) {
         const { error } = await signUp.email({ email, password, name });
         if (error) throw new Error(error.message ?? "Could not create account.");
         captureEvent("user_signed_up", { provider: "email" });
-      } else {
-        const { error } = await signIn.email({ email, password });
-        if (error) throw new Error(error.message ?? "Invalid email or password.");
-        captureEvent("user_signed_in", { provider: "email" });
+        // `requireEmailVerification` means sign-up issues no session; a code
+        // has just been emailed instead.
+        setPending({ email, password });
+        return;
       }
+
+      const { error } = await signIn.email({ email, password });
+      if (error) {
+        if (error.code === "EMAIL_NOT_VERIFIED") {
+          // The server re-sent a fresh code as part of this attempt.
+          toast.info("Verify your email to continue — we sent you a code.");
+          setPending({ email, password });
+          return;
+        }
+        throw new Error(error.message ?? "Invalid email or password.");
+      }
+      captureEvent("user_signed_in", { provider: "email" });
       router.push(nextPath);
       router.refresh();
     } catch (err) {
@@ -59,6 +82,33 @@ export function AuthForm({ mode }: { mode: Mode }) {
       setLoading(false);
     }
   }
+
+  /** Runs after the emailed code is accepted: sign in with the held password. */
+  const handleVerified = useCallback(async () => {
+    if (!pending) return;
+    setFinishingSignIn(true);
+    try {
+      const { error } = await signIn.email({
+        email: pending.email,
+        password: pending.password,
+      });
+      if (error) {
+        // Verification succeeded, so the account is usable — send them back to
+        // the password form rather than leaving them on a dead-end screen.
+        setPending(null);
+        toast.error(
+          error.message ?? "Email verified. Please sign in to continue.",
+        );
+        return;
+      }
+      captureEvent("user_email_verified");
+      captureEvent("user_signed_in", { provider: "email" });
+      router.push(nextPath);
+      router.refresh();
+    } finally {
+      setFinishingSignIn(false);
+    }
+  }, [nextPath, pending, router]);
 
   async function handleGoogle() {
     setGoogleLoading(true);
@@ -71,6 +121,18 @@ export function AuthForm({ mode }: { mode: Mode }) {
       toast.error("Google sign-in failed.");
       setGoogleLoading(false);
     }
+  }
+
+  // The email verification step replaces the whole card until it resolves.
+  if (pending) {
+    return (
+      <AuthOtpForm
+        email={pending.email}
+        onVerified={handleVerified}
+        onBack={() => setPending(null)}
+        finishing={finishingSignIn}
+      />
+    );
   }
 
   return (
